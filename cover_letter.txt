@@ -1,0 +1,4 @@
+This is a placeholder file for cover_letter.pdf.
+
+Please replace this file with your actual cover letter in PDF format.
+The autonomous job agent will use this file when applying to jobs.

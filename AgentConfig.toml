@@ -1,0 +1,41 @@
+name = "Timothy Roessel"
+email = "timothyroessel@gmail.com"
+location = ["Beaverton, OR", "Portland, OR", "Remote", "United States", "Any"]
+open_to_relocation = true
+
+job_keywords = [
+    "Process Optimization", "Manufacturing Support", "Production Support",
+    "Project Coordination", "Technical Documentation", "Process Engineer",
+    "Operations Analyst", "Root Cause Analysis", "Continuous Improvement",
+    "Automation", "AI Integration", "Process Automation", "Team Collaboration",
+    "Technical Support", "Project Manager", "Quality Analyst", "Operations Manager"
+]
+
+skills = [
+    "Process Innovation", "NX CAD", "SolidWorks", "Teamcenter", "MS Office Suite",
+    "SharePoint", "Python", "Process Automation", "Technical Documentation"
+]
+
+industries = [
+    "Manufacturing", "Engineering", "Operations", "Technical Support", "Automation",
+    "Business Process", "Automotive", "Insurance", "Retail"
+]
+
+seniority_levels = ["Mid", "Senior", "Lead"]
+
+min_salary = 50000
+max_salary = 200000
+
+targets = [
+    "https://indeed.com", "https://linkedin.com/jobs", "https://glassdoor.com",
+    "https://monster.com", "https://ziprecruiter.com", "https://careerbuilder.com",
+    "https://simplyhired.com", "Company career pages", "All available job boards"
+]
+
+resume_path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
+cover_letter_path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
+
+# Search engine reconnaissance configuration
+search_engines = ["https://www.google.com/search?q=", "https://www.bing.com/search?q="]
+company_targets = ["Intel", "Nike", "adidas", "Precision Castparts", "Daimler", "Large Companies List"]
+search_locations = ["Beaverton, OR", "Portland, OR", "Remote"]
