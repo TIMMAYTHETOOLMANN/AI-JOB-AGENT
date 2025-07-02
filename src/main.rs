@@ -2,8 +2,10 @@ use log::{info, warn};
 use serde::Deserialize;
 use anyhow::Result;
 use config::Config;
+use std::time::Duration;
 
 mod job_search_engine;
+mod job_application;
 
 #[derive(Debug, Deserialize)]
 struct AgentConfig {
@@ -26,8 +28,11 @@ struct AgentConfig {
     search_locations: Vec<String>,
 }
 
-async fn search_jobs(config: &AgentConfig) -> Result<()> {
+async fn search_jobs(config: &AgentConfig) -> Result<(usize, usize)> {
     info!("Searching jobs for: {:?}", config.job_keywords);
+
+    let mut total_jobs_found = 0;
+    let mut total_jobs_applied = 0;
 
     // Standard job board search (existing functionality)
     info!("Searching standard job boards: {:?}", config.targets);
@@ -40,6 +45,7 @@ async fn search_jobs(config: &AgentConfig) -> Result<()> {
         info!("Starting search engine reconnaissance for companies: {:?}", config.company_targets);
 
         for company in &config.company_targets {
+            info!("Searching for jobs at company: {}", company);
             match job_search_engine::search_jobs_via_engine(
                 company,
                 &config.job_keywords,
@@ -47,27 +53,42 @@ async fn search_jobs(config: &AgentConfig) -> Result<()> {
                 &config.search_engines
             ).await {
                 Ok(urls) => {
-                    info!("Found {} potential job URLs for company {}", urls.len(), company);
+                    if urls.is_empty() {
+                        info!("No job URLs found for company {}", company);
+                    } else {
+                        let jobs_found = urls.len();
+                        total_jobs_found += jobs_found;
+                        info!("Found {} potential job URLs for company {}", jobs_found, company);
 
-                    // Process the found URLs
-                    if !urls.is_empty() {
+                        // Process the found URLs and apply to jobs
+                        info!("Processing job URLs for company {} and applying to matching jobs", company);
                         match job_search_engine::process_search_engine_results(
                             &urls,
                             &config.company_targets,
-                            &config.job_keywords
+                            &config.job_keywords,
+                            &config.name,
+                            &config.email,
+                            &config.resume_path,
+                            &config.cover_letter_path
                         ).await {
-                            Ok(_) => info!("Successfully processed search results for {}", company),
+                            Ok(applied_count) => {
+                                total_jobs_applied += applied_count;
+                                info!("Successfully processed search results for {}. Applied to {} jobs", company, applied_count);
+                            },
                             Err(e) => warn!("Error processing search results for {}: {}", company, e),
                         }
                     }
                 },
                 Err(e) => warn!("Error during search engine reconnaissance for {}: {}", company, e),
             }
+
+            // Add a small delay between companies to avoid overwhelming resources
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
     }
 
-    info!("Job search completed");
-    Ok(())
+    info!("Job search and application cycle completed. Found {} jobs, applied to {} jobs", total_jobs_found, total_jobs_applied);
+    Ok((total_jobs_found, total_jobs_applied))
 }
 
 #[tokio::main]
@@ -115,12 +136,36 @@ async fn main() -> Result<()> {
 
     info!("Loaded config: {:?}", config);
 
-    info!("Starting job search process...");
-    match search_jobs(&config).await {
-        Ok(_) => info!("Job search completed successfully"),
-        Err(e) => eprintln!("Error during job search: {}", e),
-    }
+    // Run the job search process continuously
+    info!("Starting continuous job search process...");
 
-    info!("Autonomous Job Agent execution completed");
-    Ok(())
+    let mut iteration = 1;
+    let mut total_jobs_found = 0;
+    let mut total_jobs_applied = 0;
+
+    loop {
+        info!("Starting job search and application iteration {}", iteration);
+
+        match search_jobs(&config).await {
+            Ok((jobs_found, jobs_applied)) => {
+                total_jobs_found += jobs_found;
+                total_jobs_applied += jobs_applied;
+                info!("Job search iteration {} completed successfully. Found {} jobs, applied to {} jobs in this iteration.", 
+                      iteration, jobs_found, jobs_applied);
+                info!("Total stats: Found {} jobs, applied to {} jobs across {} iterations", 
+                      total_jobs_found, total_jobs_applied, iteration);
+            },
+            Err(e) => {
+                warn!("Error during job search iteration {}: {}", iteration, e);
+                // Continue running despite errors
+            }
+        }
+
+        // Wait before starting the next iteration (5 minutes)
+        let wait_time = Duration::from_secs(300);
+        info!("Waiting for {} seconds before starting next job search and application iteration...", wait_time.as_secs());
+        tokio::time::sleep(wait_time).await;
+
+        iteration += 1;
+    }
 }

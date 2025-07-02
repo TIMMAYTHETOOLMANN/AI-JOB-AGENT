@@ -4,6 +4,8 @@ use log::{info, warn};
 use anyhow::Result;
 use std::time::Duration;
 
+// No need to import the job application module as we use it directly
+
 /// Searches for jobs via search engines based on company, keywords, and locations
 pub async fn search_jobs_via_engine(
     company: &str, 
@@ -172,27 +174,28 @@ fn is_relevant_job_url(url: &str, company: &str, keywords: &[String]) -> bool {
     }
 }
 
-/// Processes job URLs found via search engines
+/// Processes job URLs found via search engines and applies to matching jobs
 pub async fn process_search_engine_results(
     urls: &[String],
-    company_targets: &[String],
-    keywords: &[String]
-) -> Result<()> {
+    _company_targets: &[String],
+    keywords: &[String],
+    name: &str,
+    email: &str,
+    resume_path: &str,
+    cover_letter_path: &str
+) -> Result<usize> {
     info!("Processing {} job URLs found via search engines", urls.len());
 
-    for url in urls {
-        info!("Processing job URL: {}", url);
+    // Use the job application module to process and apply to jobs
+    let applied_count = crate::job_application::process_and_apply_to_jobs(
+        urls,
+        name,
+        email,
+        resume_path,
+        cover_letter_path,
+        keywords
+    ).await?;
 
-        // Here you would:
-        // 1. Visit the job posting page
-        // 2. Extract job details
-        // 3. Apply filtering criteria
-        // 4. If match, queue for application
-
-        // This is a placeholder for the actual implementation
-        info!("Job URL processed: {}", url);
-    }
-
-    info!("Completed processing search engine results");
-    Ok(())
+    info!("Completed processing search engine results. Applied to {} jobs", applied_count);
+    Ok(applied_count)
 }
