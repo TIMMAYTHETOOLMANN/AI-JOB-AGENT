@@ -1,171 +1,122 @@
-use log::{info, warn};
-use serde::Deserialize;
+use std::sync::{Arc, Mutex};
 use anyhow::Result;
-use config::Config;
-use std::time::Duration;
+use tracing::{info, error, debug};
+use tracing_subscriber::EnvFilter;
 
+mod config;
+mod application_state;
 mod job_search_engine;
 mod job_application;
+mod secrets;
+mod linkedin_browser;
 
-#[derive(Debug, Deserialize)]
-struct AgentConfig {
-    name: String,
-    email: String,
-    location: Vec<String>,
-    open_to_relocation: bool,
-    job_keywords: Vec<String>,
-    skills: Vec<String>,
-    industries: Vec<String>,
-    seniority_levels: Vec<String>,
-    min_salary: u32,
-    max_salary: u32,
-    targets: Vec<String>,
-    resume_path: String,
-    cover_letter_path: String,
-    // Search engine reconnaissance configuration
-    search_engines: Vec<String>,
-    company_targets: Vec<String>,
-    search_locations: Vec<String>,
-}
-
-async fn search_jobs(config: &AgentConfig) -> Result<(usize, usize)> {
-    info!("Searching jobs for: {:?}", config.job_keywords);
-
-    let mut total_jobs_found = 0;
-    let mut total_jobs_applied = 0;
-
-    // Standard job board search (existing functionality)
-    info!("Searching standard job boards: {:?}", config.targets);
-    // Insert existing job search logic here
-
-    // New: Search engine reconnaissance for company-specific jobs
-    if config.company_targets.is_empty() {
-        info!("No company targets specified for search engine reconnaissance. Skipping this step.");
-    } else {
-        info!("Starting search engine reconnaissance for companies: {:?}", config.company_targets);
-
-        for company in &config.company_targets {
-            info!("Searching for jobs at company: {}", company);
-            match job_search_engine::search_jobs_via_engine(
-                company,
-                &config.job_keywords,
-                &config.search_locations,
-                &config.search_engines
-            ).await {
-                Ok(urls) => {
-                    if urls.is_empty() {
-                        info!("No job URLs found for company {}", company);
-                    } else {
-                        let jobs_found = urls.len();
-                        total_jobs_found += jobs_found;
-                        info!("Found {} potential job URLs for company {}", jobs_found, company);
-
-                        // Process the found URLs and apply to jobs
-                        info!("Processing job URLs for company {} and applying to matching jobs", company);
-                        match job_search_engine::process_search_engine_results(
-                            &urls,
-                            &config.company_targets,
-                            &config.job_keywords,
-                            &config.name,
-                            &config.email,
-                            &config.resume_path,
-                            &config.cover_letter_path
-                        ).await {
-                            Ok(applied_count) => {
-                                total_jobs_applied += applied_count;
-                                info!("Successfully processed search results for {}. Applied to {} jobs", company, applied_count);
-                            },
-                            Err(e) => warn!("Error processing search results for {}: {}", company, e),
-                        }
-                    }
-                },
-                Err(e) => warn!("Error during search engine reconnaissance for {}: {}", company, e),
-            }
-
-            // Add a small delay between companies to avoid overwhelming resources
-            tokio::time::sleep(Duration::from_secs(5)).await;
-        }
-    }
-
-    info!("Job search and application cycle completed. Found {} jobs, applied to {} jobs", total_jobs_found, total_jobs_applied);
-    Ok((total_jobs_found, total_jobs_applied))
-}
+use crate::config::Config;
+use crate::application_state::{ApplicationState, SharedApplicationState};
+use crate::job_search_engine::search_jobs;
+use crate::job_application::process_and_apply_to_jobs;
+use crate::secrets::load_secrets;
+use crate::linkedin_browser::linkedin_browser_login;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Initialize the logger with a more verbose configuration
-    std::env::set_var("RUST_LOG", "info");
-    env_logger::init();
+    // Initialize logging
+    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    
+    // Load configuration
+    let config = Config::load("AgentConfig.toml")?;
+    info!("Configuration loaded successfully");
+    
+    // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
+    let secrets = load_secrets("AgentSecrets.template");
 
-    // Determine if we're running in debug or release mode
-    let mode = if cfg!(debug_assertions) {
-        "DEVELOPMENT"
-    } else {
-        "PRODUCTION"
-    };
+    // Inject secrets into config if present (overrides AgentConfig.toml if filled)
+    let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
+    let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
+    let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
+    let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
 
-    info!("Starting Autonomous Job Agent in {} mode...", mode);
+    // Platform credentials (example: LinkedIn, Indeed, etc.)
+    let linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
+    let linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
+    let indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
+    let indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
+    let glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
+    let glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
+    let monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
+    let monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
+    let ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
+    let ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
+    let careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
+    let careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
+    // ...pass these to platform modules as needed...
 
-    if cfg!(debug_assertions) {
-        warn!("Running in DEVELOPMENT mode. For full URL detection, run in PRODUCTION mode with 'cargo run --release'");
-    } else {
-        info!("Running in PRODUCTION mode with optimized URL detection");
+    // Create application state
+    let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
+    info!("Application state initialized");
+    
+    // LinkedIn browser login (if credentials provided)
+    let mut linkedin_driver = None;
+    if !linkedin_email.is_empty() && !linkedin_password.is_empty() {
+        match linkedin_browser_login(&linkedin_email, &linkedin_password).await {
+            Ok(driver) => {
+                info!("LinkedIn browser session established");
+                linkedin_driver = Some(driver);
+            },
+            Err(e) => {
+                error!("LinkedIn login failed: {}", e);
+            }
+        }
     }
-
-    info!("Loading configuration from AgentConfig.toml...");
-    let config: AgentConfig = match Config::builder()
-        .add_source(config::File::with_name("AgentConfig"))
-        .build() {
-            Ok(config_builder) => {
-                match config_builder.try_deserialize() {
-                    Ok(config) => {
-                        info!("Configuration loaded successfully");
-                        config
-                    },
-                    Err(e) => {
-                        eprintln!("Failed to deserialize configuration: {}", e);
-                        return Err(anyhow::anyhow!("Configuration deserialization error: {}", e));
+    
+    // Continuous execution loop
+    loop {
+        info!("Starting job search cycle");
+        
+        // Search for jobs
+        match search_jobs(&config).await {
+            Ok(urls) => {
+                if !urls.is_empty() {
+                    debug!("Found {} job URLs", urls.len());
+                    
+                    // Apply to jobs
+                    let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                    let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                    let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                    match process_and_apply_to_jobs(
+                        &urls,
+                        &name,
+                        &email,
+                        &resume_path,
+                        &cover_letter_path,
+                        &config.job_keywords,
+                        Some(app_state.clone()),
+                        config.resume_profiles.as_deref(),
+                        config.cover_letter_profiles.as_deref(),
+                        &config.industries,
+                        &config.seniority_levels,
+                        linkedin_driver.as_ref(),
+                        Some((&smtp_server, &smtp_username, &smtp_password)),
+                    ).await {
+                        Ok(applied_count) => {
+                            info!("Applied to {} jobs", applied_count);
+                        },
+                        Err(e) => {
+                            error!("Failed to process and apply to jobs: {}", e);
+                        }
                     }
+                } else {
+                    info!("No matching jobs found");
                 }
             },
             Err(e) => {
-                eprintln!("Failed to build configuration: {}", e);
-                return Err(anyhow::anyhow!("Configuration build error: {}", e));
-            }
-        };
-
-    info!("Loaded config: {:?}", config);
-
-    // Run the job search process continuously
-    info!("Starting continuous job search process...");
-
-    let mut iteration = 1;
-    let mut total_jobs_found = 0;
-    let mut total_jobs_applied = 0;
-
-    loop {
-        info!("Starting job search and application iteration {}", iteration);
-
-        match search_jobs(&config).await {
-            Ok((jobs_found, jobs_applied)) => {
-                total_jobs_found += jobs_found;
-                total_jobs_applied += jobs_applied;
-                info!("Job search iteration {} completed successfully. Found {} jobs, applied to {} jobs in this iteration.", 
-                      iteration, jobs_found, jobs_applied);
-                info!("Total stats: Found {} jobs, applied to {} jobs across {} iterations", 
-                      total_jobs_found, total_jobs_applied, iteration);
-            },
-            Err(e) => {
-                warn!("Error during job search iteration {}: {}", iteration, e);
-                // Continue running despite errors
+                error!("Job search failed: {}", e);
             }
         }
-
-        // Wait before starting the next iteration (5 minutes)
-        let wait_time = Duration::from_secs(300);
-        info!("Waiting for {} seconds before starting next job search and application iteration...", wait_time.as_secs());
-        tokio::time::sleep(wait_time).await;
-
-        iteration += 1;
+        
+        // Wait before next iteration
+        info!("Waiting for next search interval...");
+        tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
     }
+    
+    Ok(())
 }

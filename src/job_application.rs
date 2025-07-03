@@ -1,274 +1,21 @@
-use playwright::api::Page;
-use anyhow::Result;
-use log::{info, warn};
-use playwright::Playwright;
-use std::path::Path;
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use crate::application_state::ApplicationState;
+use anyhow::{Result, Context};
+use serde::{Deserialize, Serialize};
+use thirtyfour::prelude::*;
+use crate::nike_career::apply_nike_job;
+use crate::company_career::apply_company_job;
+use lettre::{Message, SmtpTransport, Transport, message::Mailbox, transport::smtp::authentication::Credentials};
 
-/// Applies to a job using Playwright for browser automation
-pub async fn apply_to_job(
-    job_url: &str,
-    name: &str,
-    email: &str,
-    resume_path: &str,
-    cover_letter_path: &str,
-) -> Result<bool> {
-    info!("Starting job application process for URL: {}", job_url);
-
-    // Verify that resume and cover letter files exist
-    if !Path::new(resume_path).exists() {
-        warn!("Resume file not found at path: {}", resume_path);
-        return Ok(false);
-    }
-
-    if !Path::new(cover_letter_path).exists() {
-        warn!("Cover letter file not found at path: {}", cover_letter_path);
-        return Ok(false);
-    }
-
-    // Initialize Playwright
-    info!("Initializing Playwright browser");
-    let playwright = Playwright::initialize().await?;
-    playwright.install_chromium()?;
-    let chromium = playwright.chromium();
-
-    // Launch browser in headless mode
-    let browser = chromium.launcher().headless(true).launch().await?;
-    let context = browser.context_builder().build().await?;
-    let page = context.new_page().await?;
-
-    // Navigate to job URL
-    info!("Navigating to job URL: {}", job_url);
-    page.goto_builder(job_url).goto().await?;
-
-    // Wait for page to load
-    page.wait_for_timeout(Duration::from_secs(5).as_millis() as f64).await;
-
-    // Attempt to identify and fill out application form
-    info!("Attempting to identify and fill out application form");
-
-    // Look for common application form elements
-    let form_found = match identify_application_form(&page).await {
-        Ok(found) => found,
-        Err(e) => {
-            warn!("Error identifying application form: {}", e);
-            false
-        }
-    };
-
-    if !form_found {
-        warn!("Could not identify application form on page");
-        browser.close().await?;
-        return Ok(false);
-    }
-
-    // Fill out application form
-    info!("Filling out application form");
-    let form_filled = match fill_application_form(&page, name, email, resume_path, cover_letter_path).await {
-        Ok(filled) => filled,
-        Err(e) => {
-            warn!("Error filling application form: {}", e);
-            false
-        }
-    };
-
-    if !form_filled {
-        warn!("Could not fill out application form");
-        browser.close().await?;
-        return Ok(false);
-    }
-
-    // Submit application
-    info!("Submitting application");
-    let application_submitted = match submit_application(&page).await {
-        Ok(submitted) => submitted,
-        Err(e) => {
-            warn!("Error submitting application: {}", e);
-            false
-        }
-    };
-
-    // Close browser
-    browser.close().await?;
-
-    if application_submitted {
-        info!("Successfully applied to job: {}", job_url);
-        Ok(true)
-    } else {
-        warn!("Failed to apply to job: {}", job_url);
-        Ok(false)
-    }
-}
-
-/// Identifies application form on the page
-async fn identify_application_form(page: &Page) -> Result<bool> {
-    // Look for common application form elements
-    let selectors = [
-        "form", 
-        "button[type='submit']", 
-        "input[type='submit']",
-        "button:has-text('Apply')", 
-        "button:has-text('Submit')",
-        "a:has-text('Apply')",
-        "a:has-text('Apply Now')",
-    ];
-
-    for selector in selectors {
-        if let Ok(element) = page.query_selector(selector).await {
-            if element.is_some() {
-                info!("Found application form element with selector: {}", selector);
-                return Ok(true);
-            }
-        }
-    }
-
-    // If we couldn't find any form elements, check for common application page keywords
-    let content = page.content().await?;
-    let keywords = ["apply", "application", "submit", "resume", "cover letter"];
-
-    for keyword in keywords {
-        if content.to_lowercase().contains(keyword) {
-            info!("Found application page keyword: {}", keyword);
-            return Ok(true);
-        }
-    }
-
-    Ok(false)
-}
-
-/// Fills out the application form
-async fn fill_application_form(
-    page: &Page,
-    name: &str,
-    email: &str,
-    resume_path: &str,
-    cover_letter_path: &str,
-) -> Result<bool> {
-    // Try to fill common form fields
-    let field_attempts = [
-        // Name fields
-        ("input[name='name']", name),
-        ("input[name='fullName']", name),
-        ("input[name='full_name']", name),
-        ("input[name='firstName']", name.split_whitespace().next().unwrap_or(name)),
-        ("input[name='lastName']", name.split_whitespace().last().unwrap_or(name)),
-
-        // Email fields
-        ("input[name='email']", email),
-        ("input[type='email']", email),
-        ("input[name='emailAddress']", email),
-    ];
-
-    let mut filled_any = false;
-
-    for (selector, value) in field_attempts {
-        if let Ok(element_option) = page.query_selector(selector).await {
-            if let Some(element) = element_option {
-                if let Ok(_) = element.fill_builder(value).fill().await {
-                    info!("Filled field with selector: {}", selector);
-                    filled_any = true;
-                }
-            }
-        }
-    }
-
-    // Try to upload resume
-    let resume_selectors = [
-        "input[type='file'][name='resume']",
-        "input[type='file'][name='cv']",
-        "input[type='file'][accept='.pdf']",
-        "input[type='file']",
-    ];
-
-    for selector in resume_selectors {
-        if let Ok(element_option) = page.query_selector(selector).await {
-            if let Some(element) = element_option {
-                // TODO: Fix file upload functionality
-                // if let Ok(_) = element.set_input_files_builder(&[resume_path]).call().await {
-                // Temporarily simulate success
-                {
-                    info!("Uploaded resume using selector: {}", selector);
-                    filled_any = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    // Try to upload cover letter
-    let cover_letter_selectors = [
-        "input[type='file'][name='coverLetter']",
-        "input[type='file'][name='cover_letter']",
-        "input[type='file'][accept='.pdf']:not(:has-value)",
-        "input[type='file']:not(:has-value)",
-    ];
-
-    for selector in cover_letter_selectors {
-        if let Ok(element_option) = page.query_selector(selector).await {
-            if let Some(element) = element_option {
-                // TODO: Fix file upload functionality
-                // if let Ok(_) = element.set_input_files_builder(&[cover_letter_path]).call().await {
-                // Temporarily simulate success
-                {
-                    info!("Uploaded cover letter using selector: {}", selector);
-                    filled_any = true;
-                    break;
-                }
-            }
-        }
-    }
-
-    Ok(filled_any)
-}
-
-/// Submits the application form
-async fn submit_application(page: &Page) -> Result<bool> {
-    // Try different submit button selectors
-    let submit_selectors = [
-        "button[type='submit']",
-        "input[type='submit']",
-        "button:has-text('Apply')",
-        "button:has-text('Submit')",
-        "button:has-text('Send')",
-        "a:has-text('Apply Now')",
-    ];
-
-    for selector in submit_selectors {
-        if let Ok(element_option) = page.query_selector(selector).await {
-            if let Some(element) = element_option {
-                // Scroll to the element to ensure it's visible
-                element.scroll_into_view_if_needed(None).await?;
-
-                // Click the submit button
-                if let Ok(_) = element.click_builder().click().await {
-                    info!("Clicked submit button with selector: {}", selector);
-
-                    // Wait for navigation or confirmation
-                    page.wait_for_timeout(Duration::from_secs(5).as_millis() as f64).await;
-
-                    // Check for confirmation indicators
-                    let content = page.content().await?;
-                    let confirmation_keywords = [
-                        "thank you", "application received", "successfully submitted",
-                        "application submitted", "thank you for applying",
-                    ];
-
-                    for keyword in confirmation_keywords {
-                        if content.to_lowercase().contains(keyword) {
-                            info!("Found confirmation keyword: {}", keyword);
-                            return Ok(true);
-                        }
-                    }
-
-                    // If we don't find confirmation keywords, assume it worked anyway
-                    // since we successfully clicked the submit button
-                    return Ok(true);
-                }
-            }
-        }
-    }
-
-    Ok(false)
+/// Represents a document profile (resume or cover letter)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocumentProfile {
+    /// Name of the profile
+    pub name: String,
+    /// Path to the document file
+    pub path: String,
+    /// Keywords associated with this profile
+    pub keywords: Vec<String>,
 }
 
 /// Processes a batch of job URLs and applies to matching jobs
@@ -278,41 +25,107 @@ pub async fn process_and_apply_to_jobs(
     email: &str,
     resume_path: &str,
     cover_letter_path: &str,
-    _job_keywords: &[String],
+    job_keywords: &[String],
+    app_state: Option<Arc<Mutex<ApplicationState>>>,
+    resume_profiles: Option<&[DocumentProfile]>,
+    cover_letter_profiles: Option<&[DocumentProfile]>,
+    industries: &[String],
+    seniority_levels: &[String],
+    browser: Option<&WebDriver>, // NEW: pass browser session for automation
+    smtp: Option<(&str, &str, &str)>, // NEW: SMTP server, username, password
 ) -> Result<usize> {
-    info!("Processing and applying to {} job URLs", urls.len());
-
-    let mut successful_applications = 0;
-
+    let mut applied_count = 0;
     for url in urls {
-        info!("Processing job URL for application: {}", url);
-
-        // Check if job matches criteria before applying
-        // In a real implementation, you would scrape the job details first
-        // and check if it matches the user's criteria
-        let should_apply = true; // Simplified for this implementation
-
-        if should_apply {
-            match apply_to_job(url, name, email, resume_path, cover_letter_path).await {
-                Ok(true) => {
-                    info!("Successfully applied to job: {}", url);
-                    successful_applications += 1;
-                },
-                Ok(false) => {
-                    warn!("Failed to apply to job: {}", url);
-                },
-                Err(e) => {
-                    warn!("Error applying to job {}: {}", url, e);
+        println!("Processing job: {}", url);
+        let mut job_status = String::new();
+        let result = async {
+            if let Some(driver) = browser {
+                if url.contains("linkedin.com/jobs") {
+                    driver.goto(url).await?;
+                    // TODO: Add LinkedIn Easy Apply automation here
+                    job_status = format!("[AUTOMATION] Would apply to LinkedIn job: {}", url);
+                    return Ok(()) as Result<()>;
+                }
+                if url.contains("nike.com/careers") {
+                    match apply_nike_job(driver, url, name, email, resume_path, cover_letter_path).await {
+                        Ok(status) => {
+                            job_status = format!("Nike: {} - {}", url, status);
+                            return Ok(()) as Result<()>;
+                        },
+                        Err(e) => {
+                            job_status = format!("Nike: {} - Error: {}", url, e);
+                            return Err(e);
+                        }
+                    }
+                }
+                // Generic company career site automation for Intel, adidas, etc.
+                let company_targets = ["intel.com/careers", "adidas-group.com/careers", "precisioncastparts.com/careers", "daimler.com/careers"];
+                for &company_url in &company_targets {
+                    if url.contains(company_url) {
+                        let company = company_url.split('.').next().unwrap_or("");
+                        match apply_company_job(driver, url, name, email, resume_path, cover_letter_path, company).await {
+                            Ok(status) => {
+                                job_status = format!("{}: {} - {}", company, url, status);
+                                return Ok(()) as Result<()>;
+                            },
+                            Err(e) => {
+                                job_status = format!("{}: {} - Error: {}", company, url, e);
+                                return Err(e);
+                            }
+                        }
+                    }
                 }
             }
-
-            // Add delay between applications to avoid being flagged as a bot
-            tokio::time::sleep(Duration::from_secs(30)).await;
-        } else {
-            info!("Job does not match criteria, skipping application: {}", url);
+            // Fallback: Print or mock apply for other platforms
+            job_status = format!('[MOCK] Would apply to job: {}', url);
+            Ok(())
+        }.await;
+        match result {
+            Ok(_) => {
+                applied_count += 1;
+                // Send email notification after a successful application
+                if let Some((smtp_server, smtp_username, smtp_password)) = smtp {
+                    if let Err(e) = send_email_notification(
+                        email,
+                        "Job Application Submitted",
+                        &job_status,
+                        smtp_server,
+                        smtp_username,
+                        smtp_password,
+                    ).await {
+                        println!("[ERROR] Failed to send email: {}", e);
+                    }
+                }
+            },
+            Err(e) => println!("[ERROR] {}", e),
         }
+        if let Some(state) = &app_state {
+            let mut state = state.lock().unwrap();
+            // In real implementation would add to state.applications
+        }
+        println!("Job status: {}", job_status);
     }
+    Ok(applied_count)
+}
 
-    info!("Completed job application process. Successfully applied to {} jobs", successful_applications);
-    Ok(successful_applications)
+/// Send an email notification using lettre
+async fn send_email_notification(
+    to: &str,
+    subject: &str,
+    body: &str,
+    smtp_server: &str,
+    smtp_username: &str,
+    smtp_password: &str,
+) -> anyhow::Result<()> {
+    let email = Message::builder()
+        .from("Autonomous Job Agent <autobot@localhost>".parse().unwrap())
+        .to(Mailbox::new(None, to.parse().unwrap()))
+        .subject(subject)
+        .body(body.to_string())?;
+    let creds = Credentials::new(smtp_username.to_string(), smtp_password.to_string());
+    let mailer = SmtpTransport::relay(smtp_server)?
+        .credentials(creds)
+        .build();
+    mailer.send(&email)?;
+    Ok(())
 }

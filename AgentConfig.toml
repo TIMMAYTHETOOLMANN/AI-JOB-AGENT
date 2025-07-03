@@ -32,8 +32,42 @@ targets = [
     "https://simplyhired.com", "Company career pages", "All available job boards"
 ]
 
+# Legacy single resume/cover letter paths (kept for backward compatibility)
 resume_path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
 cover_letter_path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
+
+# Multiple resume profiles for different industries/roles
+[[resume_profiles]]
+path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
+name = "General Resume"
+industries = ["Manufacturing", "Engineering", "Operations"]
+keywords = ["Process Optimization", "Manufacturing Support", "Production Support"]
+seniority = ["Mid", "Senior"]
+
+[[resume_profiles]]
+path = "C:/OneDrive/Documents/Desktop/FIN RES - Tech.pdf"
+name = "Technical Resume"
+industries = ["Technical Support", "Automation", "Engineering"]
+keywords = ["Automation", "AI Integration", "Process Automation"]
+seniority = ["Mid", "Senior", "Lead"]
+
+# Multiple cover letter profiles for different industries/roles
+[[cover_letter_profiles]]
+path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
+name = "General Cover Letter"
+industries = ["Manufacturing", "Engineering", "Operations"]
+keywords = ["Process Optimization", "Manufacturing Support", "Production Support"]
+seniority = ["Mid", "Senior"]
+
+[[cover_letter_profiles]]
+path = "C:/OneDrive/Documents/Desktop/FIN CV - Tech.pdf"
+name = "Technical Cover Letter"
+industries = ["Technical Support", "Automation", "Engineering"]
+keywords = ["Automation", "AI Integration", "Process Automation"]
+seniority = ["Mid", "Senior", "Lead"]
+
+# Application state tracking
+applied_jobs_path = "applied_jobs.json"
 
 # Search engine reconnaissance configuration
 search_engines = ["https://www.google.com/search?q=", "https://www.bing.com/search?q="]
