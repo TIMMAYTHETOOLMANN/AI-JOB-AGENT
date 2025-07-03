@@ -5,18 +5,8 @@ use serde::{Deserialize, Serialize};
 use thirtyfour::prelude::*;
 use crate::nike_career::apply_nike_job;
 use crate::company_career::apply_company_job;
+use crate::document_profile::DocumentProfile;
 use lettre::{Message, SmtpTransport, Transport, message::Mailbox, transport::smtp::authentication::Credentials};
-
-/// Represents a document profile (resume or cover letter)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DocumentProfile {
-    /// Name of the profile
-    pub name: String,
-    /// Path to the document file
-    pub path: String,
-    /// Keywords associated with this profile
-    pub keywords: Vec<String>,
-}
 
 /// Processes a batch of job URLs and applies to matching jobs
 pub async fn process_and_apply_to_jobs(
@@ -77,7 +67,7 @@ pub async fn process_and_apply_to_jobs(
                 }
             }
             // Fallback: Print or mock apply for other platforms
-            job_status = format!('[MOCK] Would apply to job: {}', url);
+            job_status = format!("[MOCK] Would apply to job: {}", url);
             Ok(())
         }.await;
         match result {

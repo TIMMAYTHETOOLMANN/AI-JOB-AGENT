@@ -1,13 +1,13 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
-use eframe::{egui, epi};
+use eframe::egui;
 use tokio::runtime::Runtime;
 
-use autonomous_job_agent::config::Config;
-use autonomous_job_agent::job_search_engine::search_jobs;
-use autonomous_job_agent::job_application::process_and_apply_to_jobs;
-use autonomous_job_agent::application_state::ApplicationState;
+use crate::config::Config;
+use crate::job_search_engine::search_jobs;
+use crate::job_application::process_and_apply_to_jobs;
+use crate::application_state::ApplicationState;
 
 #[derive(Default, Clone)]
 pub struct JobDetail {
@@ -31,15 +31,11 @@ pub struct AgentApp {
     stats: Arc<Mutex<AgentStats>>,
 }
 
-impl epi::App for AgentApp {
-    fn name(&self) -> &str {
-        "Autonomous Job Agent GUI"
-    }
-
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut epi::Frame) {
+impl eframe::App for AgentApp {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let stats = self.stats.lock().unwrap().clone();
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Autonomous Job Agent");
+            ui.heading("Autonomous Job Agent GUI");
             ui.label(format!("Jobs found: {}", stats.jobs_found));
             ui.label(format!("Jobs applied: {}", stats.jobs_applied));
             ui.label(format!("Status: {}", stats.last_status));

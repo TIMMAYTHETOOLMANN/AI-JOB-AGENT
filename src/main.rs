@@ -9,6 +9,10 @@ mod job_search_engine;
 mod job_application;
 mod secrets;
 mod linkedin_browser;
+mod job_listing;
+mod nike_career;
+mod company_career;
+mod document_profile;
 
 use crate::config::Config;
 use crate::application_state::{ApplicationState, SharedApplicationState};
@@ -21,11 +25,36 @@ use crate::linkedin_browser::linkedin_browser_login;
 async fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
-    
+
+    // Print current working directory
+    let current_dir = std::env::current_dir().unwrap_or_default();
+    println!("Current working directory: {:?}", current_dir);
+
+    // Check if AgentConfig.toml exists
+    let config_path = "AgentConfig.toml";
+    let absolute_path = current_dir.join(config_path);
+    println!("Absolute path to config: {:?}", absolute_path);
+    println!("Config file exists: {}", absolute_path.exists());
+
+    // If the file exists, print its size
+    if absolute_path.exists() {
+        if let Ok(metadata) = std::fs::metadata(&absolute_path) {
+            println!("Config file size: {} bytes", metadata.len());
+        }
+    }
+
     // Load configuration
-    let config = Config::load("AgentConfig.toml")?;
-    info!("Configuration loaded successfully");
-    
+    let config = match Config::load(config_path) {
+        Ok(config) => {
+            info!("Configuration loaded successfully");
+            config
+        },
+        Err(e) => {
+            error!("Failed to load configuration: {}", e);
+            return Err(anyhow::anyhow!("Failed to load configuration: {}", e));
+        }
+    };
+
     // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
     let secrets = load_secrets("AgentSecrets.template");
 
@@ -53,7 +82,7 @@ async fn main() -> Result<()> {
     // Create application state
     let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
     info!("Application state initialized");
-    
+
     // LinkedIn browser login (if credentials provided)
     let mut linkedin_driver = None;
     if !linkedin_email.is_empty() && !linkedin_password.is_empty() {
@@ -67,17 +96,20 @@ async fn main() -> Result<()> {
             }
         }
     }
-    
+
     // Continuous execution loop
     loop {
         info!("Starting job search cycle");
-        
+
         // Search for jobs
         match search_jobs(&config).await {
-            Ok(urls) => {
-                if !urls.is_empty() {
-                    debug!("Found {} job URLs", urls.len());
-                    
+            Ok(job_listings) => {
+                if !job_listings.is_empty() {
+                    debug!("Found {} job listings", job_listings.len());
+
+                    // Extract URLs from job listings
+                    let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
+
                     // Apply to jobs
                     let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
                     let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
@@ -112,11 +144,11 @@ async fn main() -> Result<()> {
                 error!("Job search failed: {}", e);
             }
         }
-        
+
         // Wait before next iteration
         info!("Waiting for next search interval...");
         tokio::time::sleep(tokio::time::Duration::from_secs(600)).await;
     }
-    
+
     Ok(())
 }

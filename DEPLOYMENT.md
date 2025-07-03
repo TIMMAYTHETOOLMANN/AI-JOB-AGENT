@@ -26,7 +26,7 @@ To build the application in debug mode (with debugging symbols and less optimiza
 cargo build
 ```
 
-The debug executable will be located at `target/debug/untitled1.exe` (Windows) or `target/debug/untitled1` (Linux/macOS).
+The debug executable will be located at `target/debug/autonomous_job_agent.exe` (Windows) or `target/debug/autonomous_job_agent` (Linux/macOS).
 
 ### Release Build
 
@@ -36,7 +36,7 @@ For deployment, it's recommended to build the application in release mode, which
 cargo build --release
 ```
 
-The release executable will be located at `target/release/untitled1.exe` (Windows) or `target/release/untitled1` (Linux/macOS).
+The release executable will be located at `target/release/autonomous_job_agent.exe` (Windows) or `target/release/autonomous_job_agent` (Linux/macOS).
 
 ## Running the Application
 
@@ -58,16 +58,16 @@ You can also run the compiled executable directly:
 
 ```bash
 # Windows (Debug)
-.\target\debug\untitled1.exe
+.\target\debug\autonomous_job_agent.exe
 
 # Windows (Release)
-.\target\release\untitled1.exe
+.\target\release\autonomous_job_agent.exe
 
 # Linux/macOS (Debug)
-./target/debug/untitled1
+./target/debug/autonomous_job_agent
 
 # Linux/macOS (Release)
-./target/release/untitled1
+./target/release/autonomous_job_agent
 ```
 
 ## Deployment
@@ -93,7 +93,7 @@ You can set up scheduled execution using your operating system's task scheduler:
 1. Open the crontab file: `crontab -e`
 2. Add a line to schedule the execution, for example:
    ```
-   0 9 * * * cd /path/to/application && ./untitled1
+   0 9 * * * cd /path/to/application && ./autonomous_job_agent
    ```
    (This runs the application daily at 9 AM)
 
@@ -104,10 +104,10 @@ The application uses the `env_logger` crate for logging. By default, it logs at 
 ```bash
 # Windows
 set RUST_LOG=debug
-.\target\release\untitled1.exe
+.\target\release\autonomous_job_agent.exe
 
 # Linux/macOS
-RUST_LOG=debug ./target/release/untitled1
+RUST_LOG=debug ./target/release/autonomous_job_agent
 ```
 
 Log levels from most to least verbose: trace, debug, info, warn, error.

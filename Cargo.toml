@@ -1,5 +1,5 @@
 [package]
-name = "untitled1"
+name = "autonomous_job_agent"
 version = "0.1.0"
 edition = "2021"
 authors = ["Commander <commander@vanta-os.local>"]
@@ -23,7 +23,7 @@ env_logger = "0.10"
 reqwest = "0.11"
 scraper = "0.14"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 select = "0.5"
 rust-ini = "0.18"
 config = "0.13"
@@ -46,7 +46,6 @@ rand_chacha = "0.3"
 rand_core = "0.6"
 getrandom = "0.2"
 ring = "0.17"
-authenticator = { version = "0.4.0-alpha.24" }
 url = "2.5"
 pin-project = "1.1"
 winapi = "0.3"
@@ -58,7 +57,17 @@ anyhow = "1.0"
 dotenv = "0.15"
 eframe = "0.27"
 egui = "0.27"
+toml = "0.8"
+lettre = "0.11"
 
 # Development dependencies
 [dev-dependencies]
 test-generator = "0.3.1"
+
+[[bin]]
+name = "main_gui"
+path = "src/main_gui.rs"
+
+[[bin]]
+name = "autonomous_job_agent"
+path = "src/main.rs"
