@@ -9,4 +9,4 @@ pub mod job_listing;
 pub mod linkedin_login;
 pub mod linkedin_browser;
 pub mod nike_career;
-mod company_career;
+pub mod company_career;
