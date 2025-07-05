@@ -38,7 +38,7 @@ rustls = { version = "0.20", features = ["dangerous_configuration"] }
 hyper-rustls = { version = "0.23", features = ["http2"] }
 tokio-rustls = { version = "0.23", features = ["tls12"] }
 fantoccini = { version = "0.19", features = ["native-tls"] }
-thirtyfour = { version = "0.31", features = ["tokio-runtime", "native-tls"] }
+thirtyfour = { version = "0.31", features = ["native-tls"] }
 ordered-multimap = "0.4"
 hashbrown = "0.12"
 ppv-lite86 = "0.2"
