@@ -8,18 +8,26 @@ mod application_state;
 mod job_search_engine;
 mod job_application;
 mod secrets;
-mod linkedin_browser;
 mod job_listing;
 mod nike_career;
 mod company_career;
 mod document_profile;
+
+#[cfg(feature = "mock-browser")]
+mod mock_browser;
+#[cfg(feature = "mock-browser")]
+use mock_browser::HeadlessBrowser;
+
+#[cfg(feature = "headless-chrome")]
+mod headless_browser;
+#[cfg(feature = "headless-chrome")]
+use headless_browser::HeadlessBrowser;
 
 use crate::config::Config;
 use crate::application_state::{ApplicationState, SharedApplicationState};
 use crate::job_search_engine::search_jobs;
 use crate::job_application::process_and_apply_to_jobs;
 use crate::secrets::load_secrets;
-use crate::linkedin_browser::linkedin_browser_login;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -83,19 +91,18 @@ async fn main() -> Result<()> {
     let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
     info!("Application state initialized");
 
-    // LinkedIn browser login (if credentials provided)
-    let mut linkedin_driver = None;
-    if !linkedin_email.is_empty() && !linkedin_password.is_empty() {
-        match linkedin_browser_login(&linkedin_email, &linkedin_password).await {
-            Ok(driver) => {
-                info!("LinkedIn browser session established");
-                linkedin_driver = Some(driver);
-            },
-            Err(e) => {
-                error!("LinkedIn login failed: {}", e);
-            }
+    // Initialize headless browser
+    let mut browser = match HeadlessBrowser::new() {
+        Ok(browser) => {
+            info!("Headless browser initialized successfully");
+            Some(browser)
+        },
+        Err(e) => {
+            error!("Failed to initialize headless browser: {}", e);
+            info!("Continuing without browser automation");
+            None
         }
-    }
+    };
 
     // Continuous execution loop
     loop {
@@ -126,7 +133,7 @@ async fn main() -> Result<()> {
                         config.cover_letter_profiles.as_deref(),
                         &config.industries,
                         &config.seniority_levels,
-                        linkedin_driver.as_ref(),
+                        browser.as_ref(),
                         Some((&smtp_server, &smtp_username, &smtp_password)),
                     ).await {
                         Ok(applied_count) => {

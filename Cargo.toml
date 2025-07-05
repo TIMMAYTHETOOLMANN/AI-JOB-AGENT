@@ -15,59 +15,23 @@ futures = "0.3"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-sha2 = "0.10"
-base64 = "0.21"
-chrono = "0.4"
-log = "0.4"
-env_logger = "0.10"
-reqwest = { version = "0.11", features = ["json", "native-tls"] }
-scraper = "0.14"
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1.0"
+toml = "0.8"
+url = "2.5"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-select = "0.5"
-rust-ini = "0.18"
-config = "0.13"
-phf = "0.11"
-string_cache = "0.8"
-html5ever = "0.26"
-cssparser = "0.31"
-selectors = "0.25"
-markup5ever = "0.11"
-webpki = "0.22"
-rustls = { version = "0.20", features = ["dangerous_configuration"] }
-hyper-rustls = { version = "0.23", features = ["http2"] }
-tokio-rustls = { version = "0.23", features = ["tls12"] }
-fantoccini = { version = "0.19", features = ["native-tls"] }
-thirtyfour = { version = "0.31", features = ["native-tls"] }
-ordered-multimap = "0.4"
-hashbrown = "0.12"
-ppv-lite86 = "0.2"
-rand_chacha = "0.3"
-rand_core = "0.6"
-getrandom = { version = "0.2", features = ["std"] }
-ring = { version = "0.17", features = ["std"] }
-url = "2.5"
-pin-project = "1.1"
-winapi = { version = "0.3", features = ["winuser", "winerror", "winbase"] }
-windows = { version = "0.52", features = ["Win32_Foundation", "Win32_System_Threading"] }
-tempfile = "3.1"
-regex = "1.10"
-system_shutdown = "4.0.1"
-anyhow = "1.0"
-dotenv = "0.15"
-eframe = { version = "0.27", features = ["default_fonts", "glow"] }
-egui = { version = "0.27", features = ["default_fonts"] }
-toml = "0.8"
-lettre = "0.11"
 
-# Development dependencies
-[dev-dependencies]
-test-generator = "0.3.1"
-
-[[bin]]
-name = "main_gui"
-path = "src/main_gui.rs"
+# Mock browser for testing without external dependencies
+[features]
+default = ["mock-browser"]
+mock-browser = []
+headless-chrome = []
 
 [[bin]]
 name = "autonomous_job_agent"
 path = "src/main.rs"
+
+[[bin]]
+name = "test_config"
+path = "src/bin/test_config.rs"

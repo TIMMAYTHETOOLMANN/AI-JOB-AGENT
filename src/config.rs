@@ -21,6 +21,8 @@ pub struct Config {
     pub resume_profiles: Option<Vec<DocumentProfile>>,
     pub cover_letter_profiles: Option<Vec<DocumentProfile>>,
     pub applied_jobs_path: Option<String>,
+    pub min_salary: Option<u32>,
+    pub max_salary: Option<u32>,
     #[serde(default)]
     pub search_engines: Vec<String>,
     #[serde(default)]

@@ -1,0 +1,58 @@
+[package]
+name = "autonomous_job_agent"
+version = "0.1.0"
+edition = "2021"
+authors = ["Commander <commander@vanta-os.local>"]
+description = "Autonomous headless job search, match, and apply agent"
+license = "MIT"
+repository = "https://gitlab.com/your_org/autonomous_job_agent"
+keywords = ["automation", "agent", "jobs", "headless", "browser"]
+categories = ["web-programming", "command-line-utilities"]
+readme = "README.md"
+
+[dependencies]
+futures = "0.3"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+base64 = "0.21"
+chrono = "0.4"
+log = "0.4"
+env_logger = "0.10"
+reqwest = { version = "0.11", features = ["json", "native-tls"] }
+scraper = "0.14"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+regex = "1.10"
+anyhow = "1.0"
+dotenv = "0.15"
+toml = "0.8"
+lettre = "0.11"
+url = "2.5"
+tempfile = "3.1"
+urlencoding = "2.1"
+
+# Browser automation - using headless_chrome for better production support
+headless_chrome = "0.9"
+
+# Optional GUI dependencies
+eframe = { version = "0.27", features = ["default_fonts", "glow"], optional = true }
+egui = { version = "0.27", features = ["default_fonts"], optional = true }
+
+[features]
+default = []
+gui = ["eframe", "egui"]
+
+# Development dependencies
+[dev-dependencies]
+test-generator = "0.3.1"
+
+[[bin]]
+name = "main_gui"
+path = "src/main_gui.rs"
+required-features = ["gui"]
+
+[[bin]]
+name = "autonomous_job_agent"
+path = "src/main.rs"
