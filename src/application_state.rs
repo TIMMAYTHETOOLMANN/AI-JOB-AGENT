@@ -5,8 +5,9 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use anyhow::{Result, Context};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use chrono::{Utc, DateTime};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 /// Type alias for shared application state
 pub type SharedApplicationState = Arc<Mutex<ApplicationState>>;
@@ -142,10 +143,8 @@ impl ApplicationState {
 
     /// Hashes a URL to create a unique identifier
     fn hash_url(url: &str) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(url.as_bytes());
-        let result = hasher.finalize();
-        // Convert to hex string
-        result.iter().map(|b| format!("{:02x}", b)).collect()
+        let mut hasher = DefaultHasher::new();
+        url.hash(&mut hasher);
+        format!("{:x}", hasher.finish())
     }
 }

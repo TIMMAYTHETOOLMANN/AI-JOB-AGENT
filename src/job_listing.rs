@@ -7,5 +7,7 @@ pub struct JobListing {
     pub location: String,
     pub description: String,
     pub url: String,
+    pub salary: Option<String>,
+    pub date_posted: Option<chrono::NaiveDateTime>,
 }
 
