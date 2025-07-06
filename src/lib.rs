@@ -9,3 +9,6 @@ pub mod secrets;
 pub mod linkedin_login;
 pub mod nike_career;
 pub mod company_career;
+pub mod profile_selector;
+pub mod globalization;
+pub mod adaptive_browser;
