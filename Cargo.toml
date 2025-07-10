@@ -22,12 +22,15 @@ url = "2.5"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.8"
+eframe = { version = "0.27", optional = true }
+egui = { version = "0.27", optional = true }
 
 # Mock browser for testing without external dependencies
 [features]
 default = ["mock-browser"]
 mock-browser = []
 headless-chrome = []
+egui_gui = ["eframe", "egui"]
 
 [[bin]]
 name = "autonomous_job_agent"
@@ -36,3 +39,7 @@ path = "src/main.rs"
 [[bin]]
 name = "test_config"
 path = "src/bin/test_config.rs"
+
+[[bin]]
+name = "test_location_gui"
+path = "src/bin/test_location_gui.rs"
