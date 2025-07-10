@@ -13,3 +13,6 @@ pub mod profile_selector;
 pub mod globalization;
 pub mod adaptive_browser;
 pub mod location_config_gui;
+
+#[cfg(feature = "egui_gui")]
+pub mod location_gui_app;

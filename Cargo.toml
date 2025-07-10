@@ -43,3 +43,11 @@ path = "src/bin/test_config.rs"
 [[bin]]
 name = "test_location_gui"
 path = "src/bin/test_location_gui.rs"
+
+[[bin]]
+name = "test_gui_integration"
+path = "src/bin/test_gui_integration.rs"
+
+[[bin]]
+name = "gui_demo"
+path = "src/bin/gui_demo.rs"

@@ -1,0 +1,210 @@
+cover_letter_path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
+email = "timothyroessel@gmail.com"
+industries = [
+    "Manufacturing",
+    "Engineering",
+    "Operations",
+    "Technical Support",
+    "Automation",
+    "Business Process",
+    "Automotive",
+    "Insurance",
+    "Retail",
+]
+job_keywords = [
+    "Process Optimization",
+    "Manufacturing Support",
+    "Production Support",
+    "Project Coordination",
+    "Technical Documentation",
+    "Process Engineer",
+    "Operations Analyst",
+    "Root Cause Analysis",
+    "Continuous Improvement",
+    "Automation",
+    "AI Integration",
+    "Process Automation",
+    "Team Collaboration",
+    "Technical Support",
+    "Project Manager",
+    "Quality Analyst",
+    "Operations Manager",
+]
+location = [
+    "Beaverton, OR",
+    "Portland, OR",
+    "Remote",
+    "Hawaii",
+    "United States",
+    "Any",
+]
+max_salary = 200000
+min_salary = 50000
+name = "Timothy Roessel"
+open_to_relocation = true
+resume_path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
+search_locations = [
+    "Beaverton, OR",
+    "Portland, OR",
+    "Remote",
+    "Hawaii",
+    "United States",
+    "Any",
+]
+seniority_levels = [
+    "Mid",
+    "Senior",
+    "Lead",
+]
+skills = [
+    "Process Innovation",
+    "NX CAD",
+    "SolidWorks",
+    "Teamcenter",
+    "MS Office Suite",
+    "SharePoint",
+    "Python",
+    "Process Automation",
+    "Technical Documentation",
+]
+targets = [
+    "https://indeed.com",
+    "https://linkedin.com/jobs",
+    "https://glassdoor.com",
+    "https://monster.com",
+    "https://ziprecruiter.com",
+    "https://careerbuilder.com",
+    "https://simplyhired.com",
+    "Company career pages",
+    "All available job boards",
+]
+
+[[cover_letter_profiles]]
+industries = [
+    "Manufacturing",
+    "Engineering",
+    "Operations",
+]
+keywords = [
+    "Process Optimization",
+    "Manufacturing Support",
+    "Production Support",
+]
+name = "General Cover Letter"
+path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
+seniority = [
+    "Mid",
+    "Senior",
+]
+
+[[cover_letter_profiles]]
+a_b_testing_enabled = true
+application_rate_limit = 15
+applied_jobs_path = "applied_jobs.json"
+browser_retry_attempts = 3
+company_targets = [
+    "Intel",
+    "Nike",
+    "adidas",
+    "Precision Castparts",
+    "Daimler",
+    "Large Companies List",
+]
+dynamic_profile_selection = true
+enable_adaptive_automation = true
+enable_international_search = true
+industries = [
+    "Technical Support",
+    "Automation",
+    "Engineering",
+]
+intelligent_scheduling = true
+keywords = [
+    "Automation",
+    "AI Integration",
+    "Process Automation",
+]
+max_concurrent_applications = 5
+name = "Technical Cover Letter"
+path = "C:/OneDrive/Documents/Desktop/FIN CV - Tech.pdf"
+performance_monitoring = true
+preferred_currency = "USD"
+preferred_locales = [
+    "en-US",
+    "en-GB",
+    "en-CA",
+]
+search_engines = [
+    "https://www.google.com/search?q=",
+    "https://www.bing.com/search?q=",
+]
+search_locations = [
+    "Beaverton, OR",
+    "Portland, OR",
+    "Remote",
+    "Hawaii",
+]
+seniority = [
+    "Mid",
+    "Senior",
+    "Lead",
+]
+timezone = "America/Los_Angeles"
+
+[regional_job_boards]
+AU = [
+    "https://seek.com.au",
+    "https://careerone.com.au",
+]
+CA = [
+    "https://workopolis.com",
+    "https://jobbank.gc.ca",
+    "https://monster.ca",
+]
+EU = [
+    "https://jobs.eu",
+    "https://eurojobs.com",
+    "https://stepstone.com",
+]
+UK = [
+    "https://reed.co.uk",
+    "https://totaljobs.com",
+    "https://cv-library.co.uk",
+]
+
+[[resume_profiles]]
+industries = [
+    "Manufacturing",
+    "Engineering",
+    "Operations",
+]
+keywords = [
+    "Process Optimization",
+    "Manufacturing Support",
+    "Production Support",
+]
+name = "General Resume"
+path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
+seniority = [
+    "Mid",
+    "Senior",
+]
+
+[[resume_profiles]]
+industries = [
+    "Technical Support",
+    "Automation",
+    "Engineering",
+]
+keywords = [
+    "Automation",
+    "AI Integration",
+    "Process Automation",
+]
+name = "Technical Resume"
+path = "C:/OneDrive/Documents/Desktop/FIN RES - Tech.pdf"
+seniority = [
+    "Mid",
+    "Senior",
+    "Lead",
+]

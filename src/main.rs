@@ -17,6 +17,9 @@ mod globalization;
 mod adaptive_browser;
 mod location_config_gui;
 
+#[cfg(feature = "egui_gui")]
+mod location_gui_app;
+
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
 #[cfg(feature = "mock-browser")]

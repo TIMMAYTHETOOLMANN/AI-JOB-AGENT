@@ -4,7 +4,7 @@ use std::io::{self, Write};
 use anyhow::Result;
 
 /// Default locations recommended for job search
-const DEFAULT_LOCATIONS: &[&str] = &[
+pub const DEFAULT_LOCATIONS: &[&str] = &[
     "Beaverton, OR",
     "Portland, OR", 
     "Remote",
@@ -110,7 +110,7 @@ pub fn needs_location_config(config: &crate::config::Config) -> bool {
     !config.location.iter().any(|loc| loc.to_lowercase().contains("hawaii"))
 }
 
-/// Run the location configuration (simplified version without GUI for now)
+/// Run the location configuration (with optional GUI)
 pub fn run_location_config_gui(existing_locations: Vec<String>) -> Result<Vec<String>> {
     println!("\n=== Job Search Location Configuration ===");
     println!("Current locations: {:?}", existing_locations);
@@ -128,6 +128,25 @@ pub fn run_location_config_gui(existing_locations: Vec<String>) -> Result<Vec<St
     // Auto-select Hawaii if not already selected
     if let Some(pos) = gui.selected_locations.iter().position(|(loc, _)| loc == "Hawaii") {
         gui.selected_locations[pos].1 = true;
+    }
+    
+    // Try to run the GUI version if enabled
+    #[cfg(feature = "egui_gui")]
+    {
+        println!("Attempting to show GUI for location configuration...");
+        match crate::location_gui_app::run_gui_threaded(gui.get_selected_locations()) {
+            Ok(result) => {
+                if !result.cancelled {
+                    println!("GUI configuration completed with {} locations", result.locations.len());
+                    return Ok(result.locations);
+                } else {
+                    println!("GUI configuration was cancelled, using defaults");
+                }
+            },
+            Err(e) => {
+                println!("GUI failed to run: {}, falling back to automatic configuration", e);
+            }
+        }
     }
     
     // For now, return the updated locations with Hawaii included
@@ -170,7 +189,7 @@ mod egui_gui {
                         for i in 0..DEFAULT_LOCATIONS.len() {
                             if i < self.selected_locations.len() {
                                 let (loc, selected) = &mut self.selected_locations[i];
-                                ui.checkbox(selected, loc);
+                                ui.checkbox(selected, loc.as_str());
                             }
                         }
                     });
@@ -186,7 +205,7 @@ mod egui_gui {
                         for (i, (loc, selected)) in self.selected_locations.iter_mut().enumerate() {
                             if i >= DEFAULT_LOCATIONS.len() {
                                 ui.horizontal(|ui| {
-                                    ui.checkbox(selected, loc);
+                                    ui.checkbox(selected, loc.as_str());
                                     if ui.small_button("Remove").clicked() {
                                         to_remove.push(i);
                                     }

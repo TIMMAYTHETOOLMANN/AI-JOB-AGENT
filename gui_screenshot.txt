@@ -1,0 +1,44 @@
+Location Configuration GUI Screenshot (Placeholder)
+===============================================
+
+The GUI would display the following interface:
+
+┌─────────────────────────────────────────────────────────────┐
+│                Job Search Location Configuration             │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Select your preferred job search locations:               │
+│                                                             │
+│  ┌─ Recommended Locations ─────────────────────────────────┐│
+│  │ ☑ Beaverton, OR                                        ││
+│  │ ☑ Portland, OR                                         ││
+│  │ ☑ Remote                                               ││
+│  │ ☑ Hawaii                                               ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                             │
+│  ┌─ Custom Locations ──────────────────────────────────────┐│
+│  │ ☑ San Francisco, CA                    [Remove]        ││
+│  │                                                         ││
+│  │ Add custom location: [                 ] [Add]         ││
+│  └─────────────────────────────────────────────────────────┘│
+│                                                             │
+│  Selected: 5 locations                                     │
+│                                                             │
+│  Note: Hawaii is now included as a recommended location    │
+│        for remote work opportunities.                      │
+│                                                             │
+│                                    [Cancel] [Save Config]  │
+└─────────────────────────────────────────────────────────────┘
+
+Features:
+- Checkboxes for default locations (Beaverton, OR, Portland, OR, Remote, Hawaii)
+- Custom location input field with Add button
+- Remove button for custom locations
+- Status showing number of selected locations
+- Save/Cancel buttons
+- Error messages for validation
+- Hawaii is prominently featured as a recommended location
+
+The GUI is implemented using egui and provides a clean, intuitive interface
+for location configuration. It automatically shows when the configuration 
+is incomplete (Hawaii missing) and saves the results to AgentConfig.toml.
