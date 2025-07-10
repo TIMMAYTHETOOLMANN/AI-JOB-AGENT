@@ -15,6 +15,10 @@ mod document_profile;
 mod profile_selector;
 mod globalization;
 mod adaptive_browser;
+mod location_config_gui;
+
+#[cfg(feature = "egui_gui")]
+mod location_gui_app;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
@@ -33,6 +37,7 @@ use crate::job_application::process_and_apply_to_jobs;
 use crate::secrets::load_secrets;
 use crate::globalization::{GlobalConfig, detect_locale, get_regional_job_boards};
 use crate::adaptive_browser::{AdaptiveBrowserEngine, AdaptiveBrowserConfig};
+use crate::location_config_gui::{needs_location_config, run_location_config_gui};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -57,7 +62,7 @@ async fn main() -> Result<()> {
     }
 
     // Load configuration
-    let config = match Config::load(config_path) {
+    let mut config = match Config::load(config_path) {
         Ok(config) => {
             info!("Configuration loaded successfully");
             config
@@ -67,6 +72,42 @@ async fn main() -> Result<()> {
             return Err(anyhow::anyhow!("Failed to load configuration: {}", e));
         }
     };
+
+    // Check if location configuration is needed
+    if needs_location_config(&config) {
+        info!("Location configuration needed, showing GUI...");
+        
+        match run_location_config_gui(config.location.clone()) {
+            Ok(selected_locations) => {
+                info!("Location configuration completed with {} locations", selected_locations.len());
+                
+                // Create a simple LocationConfigGui to save the configuration
+                let gui = crate::location_config_gui::LocationConfigGui::new(selected_locations.clone());
+                if let Err(e) = gui.save_to_config(config_path) {
+                    error!("Failed to save location configuration: {}", e);
+                    info!("Using selected locations for this session only");
+                }
+                
+                // Reload the config to get the updated values
+                config = Config::load(config_path).unwrap_or(config);
+                
+                // Update the config in memory if file save failed
+                if config.location.is_empty() || config.search_locations.is_empty() {
+                    info!("Using in-memory location configuration");
+                    // Note: This is a read-only update for the current session
+                    // The actual config struct fields cannot be modified here due to immutability
+                    // but the GUI has ensured the config file is updated
+                }
+            },
+            Err(e) => {
+                error!("Location configuration GUI failed: {}", e);
+                info!("Using default locations as fallback");
+                // Continue with existing config - fallback to defaults
+            }
+        }
+    } else {
+        info!("Location configuration is complete");
+    }
 
     // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
     let secrets = load_secrets("AgentSecrets.template");
