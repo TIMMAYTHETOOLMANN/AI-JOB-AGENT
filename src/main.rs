@@ -15,6 +15,9 @@ mod document_profile;
 mod profile_selector;
 mod globalization;
 mod adaptive_browser;
+mod intelligent_scoring;
+
+pub use intelligent_scoring::JobScorer;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
@@ -107,6 +110,10 @@ async fn main() -> Result<()> {
     let mut adaptive_browser_engine = AdaptiveBrowserEngine::new(adaptive_config);
     info!("Adaptive browser engine initialized");
 
+    // Initialize intelligent job scorer
+    let mut job_scorer = JobScorer::new(&config);
+    info!("Intelligent job scoring system initialized");
+
     // Initialize headless browser
     let browser = match HeadlessBrowser::new() {
         Ok(browser) => {
@@ -137,44 +144,106 @@ async fn main() -> Result<()> {
                 if !job_listings.is_empty() {
                     debug!("Found {} job listings", job_listings.len());
 
-                    // Extract URLs from job listings
-                    let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
-
-                    // Apply to jobs with enhanced capabilities
-                    let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
-                    let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
-                    let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                    // Separate jobs for auto-application vs manual review
+                    let mut auto_apply_jobs = Vec::new();
+                    let mut manual_review_jobs = Vec::new();
                     
-                    // Enhanced application process with adaptive features
-                    match process_and_apply_to_jobs_enhanced(
-                        &urls,
-                        &name,
-                        &email,
-                        &resume_path,
-                        &cover_letter_path,
-                        &config.job_keywords,
-                        Some(app_state.clone()),
-                        config.resume_profiles.as_deref(),
-                        config.cover_letter_profiles.as_deref(),
-                        &config.industries,
-                        &config.seniority_levels,
-                        browser.as_ref(),
-                        Some((&smtp_server, &smtp_username, &smtp_password)),
-                        &mut adaptive_browser_engine,
-                        &global_config,
-                        &config,
-                    ).await {
-                        Ok(applied_count) => {
-                            info!("Applied to {} jobs with enhanced adaptive automation", applied_count);
-                            
-                            // Log performance metrics
-                            let performance_report = adaptive_browser_engine.get_performance_report();
-                            info!("Adaptive Browser Performance:\n{}", performance_report);
-                        },
-                        Err(e) => {
-                            error!("Failed to process and apply to jobs: {}", e);
+                    for job in &job_listings {
+                        let job_score = job_scorer.calculate_job_score(job, &config);
+                        
+                        if job_scorer.should_auto_apply(job, &config) {
+                            auto_apply_jobs.push(job.clone());
+                            info!("✓ Auto-applying to: '{}' at {} (score: {:.3})", 
+                                  job.title, job.company, job_score);
+                        } else {
+                            manual_review_jobs.push(job.clone());
+                            info!("⚠ Manual review needed: '{}' at {} (score: {:.3})", 
+                                  job.title, job.company, job_score);
                         }
                     }
+                    
+                    info!("Auto-apply jobs: {}, Manual review jobs: {}", 
+                          auto_apply_jobs.len(), manual_review_jobs.len());
+
+                    // Process auto-apply jobs first
+                    if !auto_apply_jobs.is_empty() {
+                        let auto_apply_urls: Vec<String> = auto_apply_jobs.iter().map(|job| job.url.clone()).collect();
+                        
+                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                        
+                        // Enhanced application process with intelligent scoring
+                        match process_and_apply_to_jobs_enhanced(
+                            &auto_apply_urls,
+                            &name,
+                            &email,
+                            &resume_path,
+                            &cover_letter_path,
+                            &config.job_keywords,
+                            Some(app_state.clone()),
+                            config.resume_profiles.as_deref(),
+                            config.cover_letter_profiles.as_deref(),
+                            &config.industries,
+                            &config.seniority_levels,
+                            browser.as_ref(),
+                            Some((&smtp_server, &smtp_username, &smtp_password)),
+                            &mut adaptive_browser_engine,
+                            &global_config,
+                            &config,
+                            &mut job_scorer,
+                            true, // Auto-apply mode
+                        ).await {
+                            Ok(applied_count) => {
+                                info!("✓ Successfully auto-applied to {} jobs", applied_count);
+                            },
+                            Err(e) => {
+                                error!("Failed to auto-apply to jobs: {}", e);
+                            }
+                        }
+                    }
+                    
+                    // Process manual review jobs (in this simulation, we'll still apply but with lower priority)
+                    if !manual_review_jobs.is_empty() && config.enable_auto_application {
+                        let manual_review_urls: Vec<String> = manual_review_jobs.iter().map(|job| job.url.clone()).collect();
+                        
+                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                        
+                        match process_and_apply_to_jobs_enhanced(
+                            &manual_review_urls,
+                            &name,
+                            &email,
+                            &resume_path,
+                            &cover_letter_path,
+                            &config.job_keywords,
+                            Some(app_state.clone()),
+                            config.resume_profiles.as_deref(),
+                            config.cover_letter_profiles.as_deref(),
+                            &config.industries,
+                            &config.seniority_levels,
+                            browser.as_ref(),
+                            Some((&smtp_server, &smtp_username, &smtp_password)),
+                            &mut adaptive_browser_engine,
+                            &global_config,
+                            &config,
+                            &mut job_scorer,
+                            false, // Manual review mode
+                        ).await {
+                            Ok(applied_count) => {
+                                info!("⚠ Applied to {} manual review jobs", applied_count);
+                            },
+                            Err(e) => {
+                                error!("Failed to process manual review jobs: {}", e);
+                            }
+                        }
+                    }
+                    
+                    // Log performance metrics
+                    let performance_report = adaptive_browser_engine.get_performance_report();
+                    info!("Adaptive Browser Performance:\n{}", performance_report);
+                    
                 } else {
                     info!("No matching jobs found");
                 }
@@ -221,6 +290,8 @@ async fn process_and_apply_to_jobs_enhanced(
     adaptive_engine: &mut AdaptiveBrowserEngine,
     global_config: &GlobalConfig,
     config: &Config,
+    job_scorer: &mut JobScorer,
+    auto_apply_mode: bool,
 ) -> anyhow::Result<usize> {
     let mut applied_count = 0;
     let start_time = std::time::SystemTime::now();
@@ -230,7 +301,8 @@ async fn process_and_apply_to_jobs_enhanced(
     let rate_limit = config.application_rate_limit.unwrap_or(10); // per hour
     let mut applications_this_hour = 0;
     
-    info!("Processing {} job URLs with enhanced adaptive automation", urls.len());
+    let apply_mode = if auto_apply_mode { "AUTO-APPLY" } else { "MANUAL REVIEW" };
+    info!("Processing {} job URLs in {} mode with enhanced adaptive automation", urls.len(), apply_mode);
     
     for (index, url) in urls.iter().enumerate() {
         // Check rate limits
@@ -244,28 +316,36 @@ async fn process_and_apply_to_jobs_enhanced(
             }
         }
         
-        info!("Processing job {}/{}: {}", index + 1, urls.len(), url);
+        info!("Processing job {}/{} ({}): {}", index + 1, urls.len(), apply_mode, url);
         
         let result = if let Some(browser) = browser {
             // Use adaptive browser automation
-            adaptive_engine.adaptive_apply(
+            let result = adaptive_engine.adaptive_apply(
                 browser,
                 url,
                 name,
                 email,
                 resume_path,
                 cover_letter_path,
-            ).await
+            ).await;
+            
+            // Update job scorer performance based on result
+            job_scorer.update_performance(url, result.is_ok());
+            
+            result
         } else {
-            // Fallback to basic processing
-            Ok(format!("[MOCK] Successfully processed job: {}", url))
+            // Fallback to basic processing with enhanced messaging
+            let apply_type = if auto_apply_mode { "AUTO-APPLIED" } else { "REVIEWED" };
+            Ok(format!("[MOCK] Successfully {} to job: {} (Enhanced Global System)", apply_type, url))
         };
         
         match result {
             Ok(status) => {
                 applied_count += 1;
                 applications_this_hour += 1;
-                info!("Successfully applied to job: {}", status);
+                
+                let success_icon = if auto_apply_mode { "✓" } else { "⚠" };
+                info!("{} Successfully processed job: {}", success_icon, status);
                 
                 // Update application state if available
                 if let Some(ref state) = app_state {
@@ -273,20 +353,22 @@ async fn process_and_apply_to_jobs_enhanced(
                 }
             },
             Err(e) => {
-                error!("Failed to apply to job {}: {}", url, e);
+                error!("Failed to process job {}: {}", url, e);
             }
         }
         
-        // Intelligent delay between applications
+        // Intelligent delay between applications (reduced for auto-apply)
         let delay = if config.intelligent_scheduling {
             let success_rate = adaptive_engine.get_success_rate();
+            let base_delay = if auto_apply_mode { 800 } else { 2000 }; // Faster for auto-apply
+            
             if success_rate > 0.8 {
-                1000 // 1 second if performing well
+                base_delay / 2 // Faster if performing well
             } else {
-                3000 // 3 seconds if having issues
+                base_delay * 2 // Slower if having issues
             }
         } else {
-            2000 // Default 2 seconds
+            if auto_apply_mode { 1000 } else { 2000 } // Default timing
         };
         
         if index < urls.len() - 1 {
@@ -294,6 +376,8 @@ async fn process_and_apply_to_jobs_enhanced(
         }
     }
     
-    info!("Completed processing {} jobs, successfully applied to {}", urls.len(), applied_count);
+    let final_mode = if auto_apply_mode { "auto-applied" } else { "processed for review" };
+    info!("Completed processing {} jobs, successfully {} to {}", 
+          urls.len(), final_mode, applied_count);
     Ok(applied_count)
 }

@@ -70,6 +70,47 @@ impl Default for GlobalConfig {
             "https://naukri.com".to_string(),
             "https://monsterindia.com".to_string(),
             "https://timesjobs.com".to_string(),
+            "https://shine.com".to_string(),
+            "https://foundit.in".to_string(),
+        ]);
+        international_job_boards.insert("JP".to_string(), vec![
+            "https://rikunabi.com".to_string(),
+            "https://mynavi.jp".to_string(),
+            "https://en-japan.com".to_string(),
+            "https://daijob.com".to_string(),
+            "https://gaijinpot.com".to_string(),
+        ]);
+        international_job_boards.insert("KR".to_string(), vec![
+            "https://saramin.co.kr".to_string(),
+            "https://jobkorea.co.kr".to_string(),
+            "https://incruit.com".to_string(),
+        ]);
+        international_job_boards.insert("CN".to_string(), vec![
+            "https://zhaopin.com".to_string(),
+            "https://51job.com".to_string(),
+            "https://liepin.com".to_string(),
+        ]);
+        international_job_boards.insert("DE".to_string(), vec![
+            "https://stepstone.de".to_string(),
+            "https://xing.com".to_string(),
+            "https://indeed.de".to_string(),
+            "https://monster.de".to_string(),
+        ]);
+        international_job_boards.insert("FR".to_string(), vec![
+            "https://monster.fr".to_string(),
+            "https://indeed.fr".to_string(),
+            "https://apec.fr".to_string(),
+            "https://pole-emploi.fr".to_string(),
+        ]);
+        international_job_boards.insert("ES".to_string(), vec![
+            "https://indeed.es".to_string(),
+            "https://infojobs.net".to_string(),
+            "https://monster.es".to_string(),
+        ]);
+        international_job_boards.insert("BR".to_string(), vec![
+            "https://vagas.com.br".to_string(),
+            "https://catho.com.br".to_string(),
+            "https://indeed.com.br".to_string(),
         ]);
 
         let mut regional_search_terms = HashMap::new();
@@ -91,6 +132,50 @@ impl Default for GlobalConfig {
             "pension".to_string(),
             "benefits".to_string(),
         ]);
+        regional_search_terms.insert("JP".to_string(), vec![
+            "正社員".to_string(), // Full-time employee
+            "契約社員".to_string(), // Contract employee
+            "English Teacher".to_string(),
+            "Native Speaker".to_string(),
+            "International".to_string(),
+        ]);
+        regional_search_terms.insert("IN".to_string(), vec![
+            "full-time".to_string(),
+            "permanent".to_string(),
+            "benefits".to_string(),
+            "provident fund".to_string(),
+            "ESI".to_string(),
+        ]);
+        regional_search_terms.insert("DE".to_string(), vec![
+            "Vollzeit".to_string(),
+            "Festanstellung".to_string(),
+            "Sozialversicherung".to_string(),
+            "Urlaub".to_string(),
+        ]);
+        regional_search_terms.insert("FR".to_string(), vec![
+            "temps plein".to_string(),
+            "CDI".to_string(),
+            "sécurité sociale".to_string(),
+            "congés payés".to_string(),
+        ]);
+        regional_search_terms.insert("ES".to_string(), vec![
+            "tiempo completo".to_string(),
+            "contrato indefinido".to_string(),
+            "seguridad social".to_string(),
+            "vacaciones".to_string(),
+        ]);
+        regional_search_terms.insert("CA".to_string(), vec![
+            "full-time".to_string(),
+            "permanent".to_string(),
+            "benefits".to_string(),
+            "RRSP".to_string(),
+        ]);
+        regional_search_terms.insert("AU".to_string(), vec![
+            "full-time".to_string(),
+            "permanent".to_string(),
+            "superannuation".to_string(),
+            "annual leave".to_string(),
+        ]);
 
         GlobalConfig {
             default_locale: "en-US".to_string(),
@@ -104,6 +189,11 @@ impl Default for GlobalConfig {
                 "es-ES".to_string(),
                 "ja-JP".to_string(),
                 "hi-IN".to_string(),
+                "ko-KR".to_string(),
+                "zh-CN".to_string(),
+                "pt-BR".to_string(),
+                "ru-RU".to_string(),
+                "ar-SA".to_string(),
             ],
             currency_preferences,
             time_zone_mappings,
@@ -225,4 +315,157 @@ mod tests {
         assert_eq!(extract_region_from_locale("de-DE"), "DE");
         assert_eq!(extract_region_from_locale("invalid"), "US");
     }
+}
+
+/// Simple translation service for job-related terms
+pub fn translate_job_terms(text: &str, from_lang: &str, to_lang: &str) -> Result<String> {
+    // Simple translation dictionary for common job terms
+    let translations: HashMap<(&str, &str), &str> = [
+        // English to Japanese
+        (("en", "ja"), "エンジニア"), // Engineer
+        (("en", "ja"), "マネージャー"), // Manager
+        (("en", "ja"), "開発者"), // Developer
+        (("en", "ja"), "営業"), // Sales
+        (("en", "ja"), "マーケティング"), // Marketing
+        
+        // English to Hindi
+        (("en", "hi"), "इंजीनियर"), // Engineer
+        (("en", "hi"), "प्रबंधक"), // Manager
+        (("en", "hi"), "डेवलपर"), // Developer
+        (("en", "hi"), "बिक्री"), // Sales
+        (("en", "hi"), "मार्केटिंग"), // Marketing
+        
+        // Add more translations as needed
+    ].iter().cloned().collect();
+    
+    // Simple keyword-based translation
+    let mut result = text.to_string();
+    
+    // In production, this would use a proper translation service
+    // For now, we'll just return the original text with a note
+    if from_lang != to_lang {
+        result = format!("[{}] {}", to_lang.to_uppercase(), text);
+    }
+    
+    Ok(result)
+}
+
+/// Get job categories suitable for international positions
+pub fn get_international_job_categories() -> Vec<String> {
+    vec![
+        "English Teacher".to_string(),
+        "ESL Instructor".to_string(),
+        "International Business".to_string(),
+        "Cross-cultural Communication".to_string(),
+        "Cultural Liaison".to_string(),
+        "International Sales".to_string(),
+        "Global Operations".to_string(),
+        "Export/Import Manager".to_string(),
+        "International Marketing".to_string(),
+        "Cultural Ambassador".to_string(),
+        "Language Trainer".to_string(),
+        "International Relations".to_string(),
+        "Global Project Manager".to_string(),
+        "International Consultant".to_string(),
+        "Cultural Adaptation Specialist".to_string(),
+    ]
+}
+
+/// Get job categories suitable for North Americans abroad
+pub fn get_north_american_abroad_categories() -> Vec<String> {
+    vec![
+        "Native English Speaker".to_string(),
+        "American/Canadian Business".to_string(),
+        "Western Business Practices".to_string(),
+        "North American Culture".to_string(),
+        "English Language Specialist".to_string(),
+        "International Assignment".to_string(),
+        "Expat Position".to_string(),
+        "Cultural Exchange".to_string(),
+        "Western Marketing".to_string(),
+        "North American Standards".to_string(),
+        "International School".to_string(),
+        "American Company Representative".to_string(),
+        "Cross-cultural Training".to_string(),
+        "Western Technology Transfer".to_string(),
+        "North American Business Development".to_string(),
+    ]
+}
+
+/// Adapt resume content for different cultural contexts
+pub fn adapt_resume_for_culture(content: &str, target_culture: &str) -> Result<String> {
+    let mut adapted_content = content.to_string();
+    
+    match target_culture {
+        "JP" => {
+            // Japanese business culture adaptations
+            adapted_content = adapted_content.replace("I achieved", "Achieved through team collaboration");
+            adapted_content = adapted_content.replace("I led", "Contributed to leadership of");
+            adapted_content = format!("{}{}",
+                "[Cultural Note: Adapted for Japanese business culture - Emphasis on team collaboration and continuous improvement]\n\n",
+                adapted_content
+            );
+        },
+        "IN" => {
+            // Indian business culture adaptations
+            adapted_content = format!("{}{}",
+                "[Cultural Note: Adapted for Indian business culture - Emphasis on technical skills and process improvement]\n\n",
+                adapted_content
+            );
+        },
+        "DE" => {
+            // German business culture adaptations
+            adapted_content = format!("{}{}",
+                "[Cultural Note: Adapted for German business culture - Emphasis on precision, quality, and technical expertise]\n\n",
+                adapted_content
+            );
+        },
+        "FR" => {
+            // French business culture adaptations
+            adapted_content = format!("{}{}",
+                "[Cultural Note: Adapted for French business culture - Emphasis on intellectual approach and methodical processes]\n\n",
+                adapted_content
+            );
+        },
+        _ => {
+            // Default: no adaptation needed
+        }
+    }
+    
+    Ok(adapted_content)
+}
+
+/// Calculate cultural adaptation score for job matching
+pub fn calculate_cultural_fit_score(job_location: &str, job_description: &str, user_background: &str) -> f64 {
+    let mut score: f64 = 0.5; // Base score
+    
+    // Boost score for international/cross-cultural positions
+    if job_description.to_lowercase().contains("international") ||
+       job_description.to_lowercase().contains("cross-cultural") ||
+       job_description.to_lowercase().contains("global") {
+        score += 0.2;
+    }
+    
+    // Boost score for English teaching positions
+    if job_description.to_lowercase().contains("english teacher") ||
+       job_description.to_lowercase().contains("esl") ||
+       job_description.to_lowercase().contains("native speaker") {
+        score += 0.3;
+    }
+    
+    // Boost score for North American background in international contexts
+    if user_background.contains("North American") && !job_location.contains("US") && !job_location.contains("CA") {
+        score += 0.2;
+    }
+    
+    // Boost score for manufacturing/technical roles (user's background)
+    if job_description.to_lowercase().contains("manufacturing") ||
+       job_description.to_lowercase().contains("engineering") ||
+       job_description.to_lowercase().contains("process") ||
+       job_description.to_lowercase().contains("automation") {
+        score += 0.15;
+    }
+    
+    // Cap the score at 1.0
+    score.min(1.0)
 }

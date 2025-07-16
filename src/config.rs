@@ -71,6 +71,44 @@ pub struct Config {
     pub intelligent_scheduling: bool,
     #[serde(default)]
     pub a_b_testing_enabled: bool,
+    
+    // NEW: Enhanced job search criteria
+    #[serde(default)]
+    pub enable_fuzzy_matching: bool,
+    #[serde(default)]
+    pub job_title_synonyms: HashMap<String, Vec<String>>,
+    #[serde(default)]
+    pub skill_synonyms: HashMap<String, Vec<String>>,
+    #[serde(default)]
+    pub enable_auto_application: bool,
+    #[serde(default)]
+    pub auto_apply_threshold: f64, // 0.0 to 1.0 scoring threshold
+    
+    // NEW: Multi-language support
+    #[serde(default)]
+    pub supported_languages: Vec<String>,
+    #[serde(default)]
+    pub enable_translation: bool,
+    #[serde(default)]
+    pub translation_confidence_threshold: f64,
+    
+    // NEW: Enhanced company targeting
+    #[serde(default)]
+    pub manufacturing_companies: Vec<String>,
+    #[serde(default)]
+    pub technology_companies: Vec<String>,
+    #[serde(default)]
+    pub international_companies: Vec<String>,
+    
+    // NEW: International job categories
+    #[serde(default)]
+    pub enable_english_teaching_jobs: bool,
+    #[serde(default)]
+    pub enable_cross_cultural_jobs: bool,
+    #[serde(default)]
+    pub north_american_abroad_jobs: bool,
+    #[serde(default)]
+    pub skill_expansion_factor: f64, // How far outside skillset to search
 }
 
 
@@ -153,5 +191,89 @@ impl Config {
         job_boards.sort();
         job_boards.dedup();
         job_boards
+    }
+    
+    /// Get enhanced job keywords including synonyms and related terms
+    pub fn get_enhanced_job_keywords(&self) -> Vec<String> {
+        let mut keywords = self.job_keywords.clone();
+        
+        // Add synonyms for each keyword
+        for keyword in &self.job_keywords {
+            if let Some(synonyms) = self.job_title_synonyms.get(keyword) {
+                keywords.extend(synonyms.clone());
+            }
+        }
+        
+        // Add international job categories if enabled
+        if self.enable_english_teaching_jobs {
+            keywords.extend(vec![
+                "English Teacher".to_string(),
+                "ESL Instructor".to_string(),
+                "English Conversation".to_string(),
+                "Native Speaker".to_string(),
+                "Language Teacher".to_string(),
+                "International School".to_string(),
+            ]);
+        }
+        
+        if self.enable_cross_cultural_jobs {
+            keywords.extend(vec![
+                "Cross-cultural".to_string(),
+                "International Business".to_string(),
+                "Cultural Exchange".to_string(),
+                "Global Operations".to_string(),
+                "International Relations".to_string(),
+                "Cultural Liaison".to_string(),
+            ]);
+        }
+        
+        if self.north_american_abroad_jobs {
+            keywords.extend(vec![
+                "North American".to_string(),
+                "Native English Speaker".to_string(),
+                "International Assignment".to_string(),
+                "Expat Position".to_string(),
+                "Cultural Ambassador".to_string(),
+                "Western Business".to_string(),
+            ]);
+        }
+        
+        // Remove duplicates
+        keywords.sort();
+        keywords.dedup();
+        keywords
+    }
+    
+    /// Get all target companies including enhanced manufacturing and technology companies
+    pub fn get_all_target_companies(&self) -> Vec<String> {
+        let mut companies = self.company_targets.clone();
+        
+        // Add manufacturing companies
+        companies.extend(self.manufacturing_companies.clone());
+        
+        // Add technology companies  
+        companies.extend(self.technology_companies.clone());
+        
+        // Add international companies
+        companies.extend(self.international_companies.clone());
+        
+        // Remove duplicates
+        companies.sort();
+        companies.dedup();
+        companies
+    }
+    
+    /// Check if a job should be auto-applied based on scoring threshold
+    pub fn should_auto_apply(&self, job_score: f64) -> bool {
+        self.enable_auto_application && job_score >= self.auto_apply_threshold
+    }
+    
+    /// Get supported languages for translation
+    pub fn get_supported_languages(&self) -> Vec<String> {
+        if self.supported_languages.is_empty() {
+            vec!["en".to_string(), "ja".to_string(), "hi".to_string()]
+        } else {
+            self.supported_languages.clone()
+        }
     }
 }
