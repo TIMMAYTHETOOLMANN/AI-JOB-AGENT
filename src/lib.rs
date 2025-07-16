@@ -13,3 +13,4 @@ pub mod profile_selector;
 pub mod globalization;
 pub mod adaptive_browser;
 pub mod intelligent_scoring;
+pub mod enhanced_tests;

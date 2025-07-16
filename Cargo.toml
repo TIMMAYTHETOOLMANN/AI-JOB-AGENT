@@ -36,3 +36,11 @@ path = "src/main.rs"
 [[bin]]
 name = "test_config"
 path = "src/bin/test_config.rs"
+
+[[bin]]
+name = "test_enhanced"
+path = "src/bin/test_enhanced.rs"
+
+[[bin]]
+name = "debug_config"
+path = "src/bin/debug_config.rs"

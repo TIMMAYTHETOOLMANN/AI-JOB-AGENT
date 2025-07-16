@@ -114,6 +114,18 @@ enable_english_teaching_jobs = true
 enable_cross_cultural_jobs = true
 north_american_abroad_jobs = true
 
+# NEW: Adaptive Automation Configuration
+enable_adaptive_automation = true
+browser_retry_attempts = 3
+performance_monitoring = true
+dynamic_profile_selection = true
+
+# NEW: Optimization and Performance Settings
+max_concurrent_applications = 5
+application_rate_limit = 15  # Applications per hour
+intelligent_scheduling = true
+a_b_testing_enabled = true
+
 # Job title synonyms for enhanced matching
 [job_title_synonyms]
 "Process Engineer" = ["Manufacturing Engineer", "Production Engineer", "Industrial Engineer", "Process Specialist"]
@@ -129,18 +141,6 @@ north_american_abroad_jobs = true
 "CAD" = ["Computer-Aided Design", "3D Modeling", "Engineering Design", "Technical Drawing"]
 "Process Automation" = ["Workflow Automation", "Business Process Automation", "RPA", "Industrial Automation"]
 "Technical Documentation" = ["Technical Writing", "Documentation", "Procedure Writing", "Manual Creation"]
-
-# NEW: Adaptive Automation Configuration
-enable_adaptive_automation = true
-browser_retry_attempts = 3
-performance_monitoring = true
-dynamic_profile_selection = true
-
-# NEW: Optimization and Performance Settings
-max_concurrent_applications = 5
-application_rate_limit = 15  # Applications per hour
-intelligent_scheduling = true
-a_b_testing_enabled = true
 
 # Regional job boards for international expansion
 [regional_job_boards]
