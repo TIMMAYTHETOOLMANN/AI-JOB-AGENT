@@ -74,11 +74,45 @@ search_engines = ["https://www.google.com/search?q=", "https://www.bing.com/sear
 company_targets = ["Intel", "Nike", "adidas", "Precision Castparts", "Daimler", "Large Companies List"]
 search_locations = ["Beaverton, OR", "Portland, OR", "Remote"]
 
+# Enhanced company targeting
+manufacturing_companies = [
+    "Beckwood", "Keyful", "Acid Alloy", "RFS Commack", "Kence",
+    "Caterpillar", "General Electric", "Siemens", "ABB", "Bosch",
+    "Schneider Electric", "Emerson", "Honeywell", "3M", "DuPont"
+]
+
+technology_companies = [
+    "Apple", "Microsoft", "Google", "Amazon", "Meta", "Tesla",
+    "NVIDIA", "AMD", "Qualcomm", "Broadcom", "Cisco", "Oracle",
+    "Salesforce", "ServiceNow", "Palantir", "Snowflake"
+]
+
+international_companies = [
+    "Toyota", "Samsung", "TSMC", "ASML", "Nestlé", "Unilever",
+    "L'Oréal", "LVMH", "Tencent", "Alibaba", "Sony", "Panasonic"
+]
+
 # NEW: Global and International Configuration
 preferred_locales = ["en-US", "en-GB", "en-CA"]
 preferred_currency = "USD"
 timezone = "America/Los_Angeles"
 enable_international_search = true
+
+# NEW: Enhanced job search criteria
+enable_fuzzy_matching = true
+enable_auto_application = true
+auto_apply_threshold = 0.75
+skill_expansion_factor = 1.3
+
+# NEW: Multi-language support
+supported_languages = ["en", "ja", "hi", "es", "fr", "de"]
+enable_translation = true
+translation_confidence_threshold = 0.8
+
+# NEW: International job categories
+enable_english_teaching_jobs = true
+enable_cross_cultural_jobs = true
+north_american_abroad_jobs = true
 
 # NEW: Adaptive Automation Configuration
 enable_adaptive_automation = true
@@ -91,6 +125,22 @@ max_concurrent_applications = 5
 application_rate_limit = 15  # Applications per hour
 intelligent_scheduling = true
 a_b_testing_enabled = true
+
+# Job title synonyms for enhanced matching
+[job_title_synonyms]
+"Process Engineer" = ["Manufacturing Engineer", "Production Engineer", "Industrial Engineer", "Process Specialist"]
+"Automation" = ["Robotics", "Control Systems", "SCADA", "PLC Programming", "Industrial Automation"]
+"Technical Support" = ["Tech Support", "Customer Support", "Application Support", "Field Support"]
+"Operations Manager" = ["Operations Director", "Plant Manager", "Production Manager", "Manufacturing Manager"]
+"Quality Analyst" = ["Quality Engineer", "QA Engineer", "Quality Control", "Quality Assurance"]
+"Project Manager" = ["Project Coordinator", "Program Manager", "Project Lead", "Project Director"]
+
+# Skill synonyms for broader matching
+[skill_synonyms]
+"Python" = ["Python Programming", "Python Development", "Python Scripting", "Python Automation"]
+"CAD" = ["Computer-Aided Design", "3D Modeling", "Engineering Design", "Technical Drawing"]
+"Process Automation" = ["Workflow Automation", "Business Process Automation", "RPA", "Industrial Automation"]
+"Technical Documentation" = ["Technical Writing", "Documentation", "Procedure Writing", "Manual Creation"]
 
 # Regional job boards for international expansion
 [regional_job_boards]
