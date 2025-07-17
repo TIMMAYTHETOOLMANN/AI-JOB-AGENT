@@ -1,1 +1,36 @@
 /target
+
+# Deployment artifacts
+deploy_*.log
+deploy_*.json
+rollback.sh
+deploy-archive-*.tar.gz
+deploy-history/
+
+# Temporary files
+.env.backup
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node.js (if needed)
+node_modules/
+npm-debug.log*
+
+# Python (if needed)
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Docker
+.dockerignore
