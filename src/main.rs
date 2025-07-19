@@ -19,13 +19,17 @@ mod main_gui;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
-#[cfg(feature = "mock-browser")]
-use mock_browser::HeadlessBrowser;
 
 #[cfg(feature = "headless-chrome")]
 mod headless_browser;
+
+// Use real browser by default when headless-chrome feature is enabled
 #[cfg(feature = "headless-chrome")]
 use headless_browser::HeadlessBrowser;
+
+// Fallback to mock browser only when headless-chrome is not available
+#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
+use mock_browser::HeadlessBrowser;
 
 use crate::config::Config;
 use crate::application_state::{ApplicationState, SharedApplicationState};
@@ -249,12 +253,20 @@ fn agent_main_cli() {
         // Initialize headless browser
         let browser = match HeadlessBrowser::new() {
             Ok(browser) => {
-                info!("Headless browser initialized successfully");
-                println!("✓ Mock browser initialized successfully");
+                #[cfg(feature = "headless-chrome")]
+                {
+                    info!("Production browser initialized successfully");
+                    println!("✓ Production browser initialized successfully");
+                }
+                #[cfg(not(feature = "headless-chrome"))]
+                {
+                    info!("Mock browser initialized successfully");
+                    println!("✓ Mock browser initialized successfully");
+                }
                 Some(browser)
             },
             Err(e) => {
-                error!("Failed to initialize headless browser: {}", e);
+                error!("Failed to initialize browser: {}", e);
                 println!("⚠ Failed to initialize browser, continuing without automation: {}", e);
                 None
             }
@@ -453,11 +465,18 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
         // Initialize headless browser
         let browser = match HeadlessBrowser::new() {
             Ok(browser) => {
-                info!("Headless browser initialized successfully");
+                #[cfg(feature = "headless-chrome")]
+                {
+                    info!("Production browser initialized successfully");
+                }
+                #[cfg(not(feature = "headless-chrome"))]
+                {
+                    info!("Mock browser initialized successfully");
+                }
                 Some(browser)
             },
             Err(e) => {
-                error!("Failed to initialize headless browser: {}", e);
+                error!("Failed to initialize browser: {}", e);
                 info!("Continuing without browser automation");
                 None
             }

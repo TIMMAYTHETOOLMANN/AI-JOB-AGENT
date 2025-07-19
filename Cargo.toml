@@ -25,9 +25,9 @@ rand = "0.8"
 eframe = "0.27"
 regex = "1.10"
 
-# Mock browser for testing without external dependencies
+# Browser automation features
 [features]
-default = ["mock-browser"]
+default = ["headless-chrome"]
 mock-browser = []
 headless-chrome = []
 

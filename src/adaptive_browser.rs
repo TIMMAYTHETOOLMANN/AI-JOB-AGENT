@@ -4,10 +4,11 @@ use std::time::{Duration, SystemTime};
 use tracing::{info, debug, warn, error};
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "mock-browser")]
-use crate::mock_browser::HeadlessBrowser;
 #[cfg(feature = "headless-chrome")]
 use crate::headless_browser::HeadlessBrowser;
+
+#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
+use crate::mock_browser::HeadlessBrowser;
 
 /// Adaptive browser strategies for different job sites and scenarios
 #[derive(Debug, Clone, Serialize, Deserialize)]
