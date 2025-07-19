@@ -22,16 +22,46 @@ To configure this feature, use the following settings in your AgentConfig.toml:
 - `company_targets`: List of companies to target
 - `search_locations`: List of locations to search in
 
+### Enhanced Credential Management
+The agent features a comprehensive credential management system that supports:
+
+- **Environment variables** for secure credential storage
+- **Multiple credential sources** (env vars, .env file, config files)
+- **API token authentication** for supported platforms
+- **Automatic credential detection** and validation
+
+See [CREDENTIALS.md](CREDENTIALS.md) for detailed setup instructions.
+
 ## Quickstart
 
-1. **Configure AgentConfig.toml** (see below)
-2. **Resume and cover letter files are configured**
+1. **Configure credentials** (see [CREDENTIALS.md](CREDENTIALS.md) for details):
+   ```bash
+   # Set environment variables (recommended)
+   export LINKEDIN_EMAIL="your-email@example.com"
+   export LINKEDIN_PASSWORD="your-password"
+   
+   # Or copy and edit the example file
+   cp .env.example .env
+   ```
+
+2. **Test your credentials**:
+   ```bash
+   cargo run --bin test_credentials
+   ```
+
+3. **Configure AgentConfig.toml** (see below)
+
+4. **Resume and cover letter files are configured**
    - The system is configured to use Timothy's resume and cover letter from:
      - Resume: `C:/OneDrive/Documents/Desktop/FIN RES.pdf`
      - Cover Letter: `C:/OneDrive/Documents/Desktop/FIN CV.pdf`
-   - If you need to use different files, update the paths in AgentConfig.toml
-3. `cargo build --release`
-4. `cargo run --release`
+   - If you need to use different files, update the paths in AgentConfig.toml or set environment variables
+
+5. Build and run:
+   ```bash
+   cargo build --release
+   cargo run --release
+   ```
 
 ## Sample AgentConfig.toml
 
