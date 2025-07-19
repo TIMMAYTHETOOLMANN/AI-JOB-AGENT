@@ -34,3 +34,21 @@ __pycache__/
 
 # Docker
 .dockerignore
+
+# Build artifacts and logs
+target/debug/
+*.log
+logs/*.log
+temp/
+state/*.json
+*.pid
+
+# Backup and duplicate files
+*.bak
+*.orig
+*.tmp
+*~
+
+# Environment specific
+.DS_Store
+Thumbs.db
