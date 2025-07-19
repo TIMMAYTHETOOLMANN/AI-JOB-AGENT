@@ -16,6 +16,7 @@ mod profile_selector;
 mod globalization;
 mod adaptive_browser;
 mod main_gui;
+mod web_server;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
@@ -35,6 +36,7 @@ use crate::secrets::load_secrets;
 use crate::globalization::{GlobalConfig, detect_locale, get_regional_job_boards};
 use crate::adaptive_browser::{AdaptiveBrowserEngine, AdaptiveBrowserConfig};
 use crate::main_gui::RuntimeEvent;
+use crate::web_server::WebServer;
 use std::sync::mpsc::{self, Sender};
 
 fn main() {
@@ -421,26 +423,41 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
         let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
 
         // Platform credentials (example: LinkedIn, Indeed, etc.)
-        let linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
-        let linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
-        let indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
-        let indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
-        let glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
-        let glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
-        let monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
-        let monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
-        let ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
-        let ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
-        let careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
-        let careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
+        let _linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
+        let _linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
+        let _indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
+        let _indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
+        let _glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
+        let _glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
+        let _monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
+        let _monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
+        let _ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
+        let _ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
+        let _careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
+        let _careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
         // ...pass these to platform modules as needed...
 
         // Create application state
         let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
         info!("Application state initialized");
 
+        // Initialize web server
+        let web_server = WebServer::new(Some(app_state.clone()));
+        let web_tx = tx.clone();
+        
+        // Start web server in background
+        tokio::spawn(async move {
+            if let Err(e) = web_server.start(8080).await {
+                web_tx.send(RuntimeEvent {
+                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                    message: format!("Web server error: {}", e),
+                    level: "error".to_string(),
+                }).ok();
+            }
+        });
+
         // Initialize global configuration for internationalization
-        let global_config = GlobalConfig::default();
+        let _global_config = GlobalConfig::default();
         let detected_locale = config.get_effective_locale();
         let effective_currency = config.get_effective_currency();
         info!("Detected locale: {}, Currency: {}", detected_locale, effective_currency);
@@ -466,7 +483,7 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
         // Example: send a startup event
         tx.send(RuntimeEvent {
             timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-            message: "Agent started.".to_string(),
+            message: "Agent and web server started successfully.".to_string(),
             level: "info".to_string(),
         }).ok();
 
@@ -515,7 +532,7 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
                             browser.as_ref(),
                             Some((&smtp_server, &smtp_username, &smtp_password)),
                             &mut adaptive_browser_engine,
-                            &global_config,
+                            &_global_config,
                             &config,
                         ).await {
                             Ok(applied_count) => {
