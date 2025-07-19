@@ -102,27 +102,50 @@ impl eframe::App for AgentMonitorApp {
         let status = self.status.lock().unwrap();
         let events = self.events.lock().unwrap();
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("JARVIS 2.0 - Global Autonomous Job Agent Monitor");
-            ui.horizontal(|ui| {
-                ui.label(format!("Jobs found: {}", status.jobs_found));
-                ui.label(format!("Applications sent: {}", status.applications_sent));
-                ui.label(format!("Errors: {}", status.errors));
-            });
+            ui.heading("🤖 AI Job Agent - Production Browser Monitor");
             ui.separator();
-            ui.label("Recent Events:");
+            
+            ui.horizontal(|ui| {
+                ui.label("📊 Status:");
+                ui.colored_label(egui::Color32::GREEN, format!("Jobs Found: {}", status.jobs_found));
+                ui.colored_label(egui::Color32::BLUE, format!("Applications: {}", status.applications_sent));
+                ui.colored_label(egui::Color32::RED, format!("Errors: {}", status.errors));
+            });
+            
+            ui.separator();
+            ui.label("🌐 Real Browser Activity Monitor:");
+            ui.separator();
+            
             egui::ScrollArea::vertical().show(ui, |ui| {
                 for event in events.iter().rev() {
-                    ui.colored_label(
-                        match event.level.as_str() {
-                            "error" => egui::Color32::RED,
-                            "warn" => egui::Color32::YELLOW,
-                            _ => egui::Color32::WHITE,
+                    let (color, icon) = match event.level.as_str() {
+                        "error" => (egui::Color32::RED, "❌"),
+                        "warn" => (egui::Color32::YELLOW, "⚠️"),
+                        "info" => {
+                            if event.message.contains("Production browser") {
+                                (egui::Color32::GREEN, "🚀")
+                            } else if event.message.contains("Navigating to") || event.message.contains("Found") {
+                                (egui::Color32::LIGHT_BLUE, "🌐")
+                            } else if event.message.contains("Applied") || event.message.contains("clicked") {
+                                (egui::Color32::LIGHT_GREEN, "✅")
+                            } else {
+                                (egui::Color32::WHITE, "ℹ️")
+                            }
                         },
-                        format!("[{}] {}: {}", event.timestamp, event.level, event.message)
-                    );
+                        _ => (egui::Color32::WHITE, "ℹ️"),
+                    };
+                    
+                    ui.horizontal(|ui| {
+                        ui.label(icon);
+                        ui.colored_label(color, format!("[{}]", event.timestamp));
+                        ui.colored_label(color, &event.message);
+                    });
                 }
             });
         });
+        
+        // Auto-refresh the UI to show real-time updates
+        ctx.request_repaint_after(std::time::Duration::from_millis(1000));
     }
 }
 
@@ -130,7 +153,7 @@ pub fn run_gui(rx: Receiver<RuntimeEvent>) {
     let app = AgentMonitorApp::new(rx);
     let native_options = eframe::NativeOptions::default();
     if let Err(e) = eframe::run_native(
-        "JARVIS 2.0 - Global Autonomous Job Agent Monitor",
+        "🤖 AI Job Agent - Production Browser Monitor",
         native_options,
         Box::new(|_cc| Box::new(app)),
     ) {

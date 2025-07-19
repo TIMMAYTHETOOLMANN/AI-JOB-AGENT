@@ -2,10 +2,11 @@ use anyhow::{Result, anyhow};
 use std::time::Duration;
 use tracing::{info, debug, warn};
 
-#[cfg(feature = "mock-browser")]
-use crate::mock_browser::HeadlessBrowser;
 #[cfg(feature = "headless-chrome")]
 use crate::headless_browser::HeadlessBrowser;
+
+#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
+use crate::mock_browser::HeadlessBrowser;
 
 /// Attempts to log in and apply to a job on the Nike career site.
 /// Handles self-healing for dead links, login errors, and already-applied jobs.
