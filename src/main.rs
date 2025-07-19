@@ -15,6 +15,7 @@ mod document_profile;
 mod profile_selector;
 mod globalization;
 mod adaptive_browser;
+mod main_gui;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
@@ -33,174 +34,18 @@ use crate::job_application::process_and_apply_to_jobs;
 use crate::secrets::load_secrets;
 use crate::globalization::{GlobalConfig, detect_locale, get_regional_job_boards};
 use crate::adaptive_browser::{AdaptiveBrowserEngine, AdaptiveBrowserConfig};
+use crate::main_gui::RuntimeEvent;
+use std::sync::mpsc::{self, Sender};
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Initialize logging
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
-
-    // Print current working directory
-    let current_dir = std::env::current_dir().unwrap_or_default();
-    println!("Current working directory: {:?}", current_dir);
-
-    // Check if AgentConfig.toml exists
-    let config_path = "AgentConfig.toml";
-    let absolute_path = current_dir.join(config_path);
-    println!("Absolute path to config: {:?}", absolute_path);
-    println!("Config file exists: {}", absolute_path.exists());
-
-    // If the file exists, print its size
-    if absolute_path.exists() {
-        if let Ok(metadata) = std::fs::metadata(&absolute_path) {
-            println!("Config file size: {} bytes", metadata.len());
-        }
-    }
-
-    // Load configuration
-    let config = match Config::load(config_path) {
-        Ok(config) => {
-            info!("Configuration loaded successfully");
-            config
-        },
-        Err(e) => {
-            error!("Failed to load configuration: {}", e);
-            return Err(anyhow::anyhow!("Failed to load configuration: {}", e));
-        }
-    };
-
-    // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
-    let secrets = load_secrets("AgentSecrets.template");
-
-    // Inject secrets into config if present (overrides AgentConfig.toml if filled)
-    let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
-    let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
-    let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
-    let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
-
-    // Platform credentials (example: LinkedIn, Indeed, etc.)
-    let linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
-    let linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
-    let indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
-    let indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
-    let glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
-    let glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
-    let monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
-    let monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
-    let ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
-    let ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
-    let careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
-    let careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
-    // ...pass these to platform modules as needed...
-
-    // Create application state
-    let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
-    info!("Application state initialized");
-
-    // Initialize global configuration for internationalization
-    let global_config = GlobalConfig::default();
-    let detected_locale = config.get_effective_locale();
-    let effective_currency = config.get_effective_currency();
-    info!("Detected locale: {}, Currency: {}", detected_locale, effective_currency);
-
-    // Initialize adaptive browser engine
-    let adaptive_config = AdaptiveBrowserConfig::default();
-    let mut adaptive_browser_engine = AdaptiveBrowserEngine::new(adaptive_config);
-    info!("Adaptive browser engine initialized");
-
-    // Initialize headless browser
-    let browser = match HeadlessBrowser::new() {
-        Ok(browser) => {
-            info!("Headless browser initialized successfully");
-            Some(browser)
-        },
-        Err(e) => {
-            error!("Failed to initialize headless browser: {}", e);
-            info!("Continuing without browser automation");
-            None
-        }
-    };
-
-    let mut cycle_count = 0;
-    
-    // Continuous execution loop
-    loop {
-        cycle_count += 1;
-        info!("Starting job search cycle #{}", cycle_count);
-
-        // Enhanced search with global job boards
-        let all_job_boards = config.get_all_job_boards();
-        info!("Searching across {} job boards (including international)", all_job_boards.len());
-
-        // Search for jobs
-        match search_jobs(&config).await {
-            Ok(job_listings) => {
-                if !job_listings.is_empty() {
-                    debug!("Found {} job listings", job_listings.len());
-
-                    // Extract URLs from job listings
-                    let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
-
-                    // Apply to jobs with enhanced capabilities
-                    let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
-                    let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
-                    let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
-                    
-                    // Enhanced application process with adaptive features
-                    match process_and_apply_to_jobs_enhanced(
-                        &urls,
-                        &name,
-                        &email,
-                        &resume_path,
-                        &cover_letter_path,
-                        &config.job_keywords,
-                        Some(app_state.clone()),
-                        config.resume_profiles.as_deref(),
-                        config.cover_letter_profiles.as_deref(),
-                        &config.industries,
-                        &config.seniority_levels,
-                        browser.as_ref(),
-                        Some((&smtp_server, &smtp_username, &smtp_password)),
-                        &mut adaptive_browser_engine,
-                        &global_config,
-                        &config,
-                    ).await {
-                        Ok(applied_count) => {
-                            info!("Applied to {} jobs with enhanced adaptive automation", applied_count);
-                            
-                            // Log performance metrics
-                            let performance_report = adaptive_browser_engine.get_performance_report();
-                            info!("Adaptive Browser Performance:\n{}", performance_report);
-                        },
-                        Err(e) => {
-                            error!("Failed to process and apply to jobs: {}", e);
-                        }
-                    }
-                } else {
-                    info!("No matching jobs found");
-                }
-            },
-            Err(e) => {
-                error!("Job search failed: {}", e);
-            }
-        }
-
-        // Intelligent scheduling based on performance
-        let wait_duration = if config.intelligent_scheduling {
-            let success_rate = adaptive_browser_engine.get_success_rate();
-            if success_rate > 0.8 {
-                300 // 5 minutes if performing well
-            } else if success_rate > 0.5 {
-                600 // 10 minutes if performing moderately
-            } else {
-                1200 // 20 minutes if performing poorly
-            }
-        } else {
-            600 // Default 10 minutes
-        };
-
-        info!("Waiting {} seconds before next search cycle...", wait_duration);
-        tokio::time::sleep(tokio::time::Duration::from_secs(wait_duration)).await;
-    }
+fn main() {
+    let (tx, rx) = mpsc::channel();
+    // Launch agent logic in a background thread with its own tokio runtime
+    let agent_tx = tx.clone();
+    std::thread::spawn(move || {
+        agent_main(agent_tx);
+    });
+    // Run the GUI on the main thread
+    main_gui::run_gui(rx);
 }
 
 /// Enhanced job application processing with adaptive automation and global support
@@ -296,4 +141,216 @@ async fn process_and_apply_to_jobs_enhanced(
     
     info!("Completed processing {} jobs, successfully applied to {}", urls.len(), applied_count);
     Ok(applied_count)
+}
+
+fn agent_main(tx: Sender<RuntimeEvent>) {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        // Initialize logging
+        tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+
+        // Print current working directory
+        let current_dir = std::env::current_dir().unwrap_or_default();
+        println!("Current working directory: {:?}", current_dir);
+
+        // Check if AgentConfig.toml exists
+        let config_path = "AgentConfig.toml";
+        let absolute_path = current_dir.join(config_path);
+        println!("Absolute path to config: {:?}", absolute_path);
+        println!("Config file exists: {}", absolute_path.exists());
+
+        // If the file exists, print its size
+        if absolute_path.exists() {
+            if let Ok(metadata) = std::fs::metadata(&absolute_path) {
+                println!("Config file size: {} bytes", metadata.len());
+            }
+        }
+
+        // Load configuration
+        let config = match Config::load(config_path) {
+            Ok(config) => {
+                info!("Configuration loaded successfully");
+                config
+            },
+            Err(e) => {
+                error!("Failed to load configuration: {}", e);
+                tx.send(RuntimeEvent {
+                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                    message: format!("Failed to load configuration: {}", e),
+                    level: "error".to_string(),
+                }).ok();
+                return;
+            }
+        };
+
+        // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
+        let secrets = load_secrets("AgentSecrets.template");
+
+        // Inject secrets into config if present (overrides AgentConfig.toml if filled)
+        let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
+        let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
+        let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
+        let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
+
+        // Platform credentials (example: LinkedIn, Indeed, etc.)
+        let linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
+        let linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
+        let indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
+        let indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
+        let glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
+        let glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
+        let monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
+        let monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
+        let ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
+        let ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
+        let careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
+        let careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
+        // ...pass these to platform modules as needed...
+
+        // Create application state
+        let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
+        info!("Application state initialized");
+
+        // Initialize global configuration for internationalization
+        let global_config = GlobalConfig::default();
+        let detected_locale = config.get_effective_locale();
+        let effective_currency = config.get_effective_currency();
+        info!("Detected locale: {}, Currency: {}", detected_locale, effective_currency);
+
+        // Initialize adaptive browser engine
+        let adaptive_config = AdaptiveBrowserConfig::default();
+        let mut adaptive_browser_engine = AdaptiveBrowserEngine::new(adaptive_config);
+        info!("Adaptive browser engine initialized");
+
+        // Initialize headless browser
+        let browser = match HeadlessBrowser::new() {
+            Ok(browser) => {
+                info!("Headless browser initialized successfully");
+                Some(browser)
+            },
+            Err(e) => {
+                error!("Failed to initialize headless browser: {}", e);
+                info!("Continuing without browser automation");
+                None
+            }
+        };
+
+        // Example: send a startup event
+        tx.send(RuntimeEvent {
+            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+            message: "Agent started.".to_string(),
+            level: "info".to_string(),
+        }).ok();
+
+        let mut cycle_count = 0;
+
+        // Continuous execution loop
+        loop {
+            cycle_count += 1;
+            info!("Starting job search cycle #{}", cycle_count);
+
+            // Enhanced search with global job boards
+            let all_job_boards = config.get_all_job_boards();
+            info!("Searching across {} job boards (including international)", all_job_boards.len());
+
+            // Search for jobs
+            match search_jobs(&config).await {
+                Ok(job_listings) => {
+                    if !job_listings.is_empty() {
+                        debug!("Found {} job listings", job_listings.len());
+                        tx.send(RuntimeEvent {
+                            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                            message: format!("Found {} job listings", job_listings.len()),
+                            level: "info".to_string(),
+                        }).ok();
+                        // Extract URLs from job listings
+                        let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
+
+                        // Apply to jobs with enhanced capabilities
+                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+
+                        // Enhanced application process with adaptive features
+                        match process_and_apply_to_jobs_enhanced(
+                            &urls,
+                            &name,
+                            &email,
+                            &resume_path,
+                            &cover_letter_path,
+                            &config.job_keywords,
+                            Some(app_state.clone()),
+                            config.resume_profiles.as_deref(),
+                            config.cover_letter_profiles.as_deref(),
+                            &config.industries,
+                            &config.seniority_levels,
+                            browser.as_ref(),
+                            Some((&smtp_server, &smtp_username, &smtp_password)),
+                            &mut adaptive_browser_engine,
+                            &global_config,
+                            &config,
+                        ).await {
+                            Ok(applied_count) => {
+                                info!("Applied to {} jobs with enhanced adaptive automation", applied_count);
+                                tx.send(RuntimeEvent {
+                                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                    message: format!("Applied to {} jobs", applied_count),
+                                    level: "info".to_string(),
+                                }).ok();
+
+                                // Log performance metrics
+                                let performance_report = adaptive_browser_engine.get_performance_report();
+                                info!("Adaptive Browser Performance:\n{}", performance_report);
+                                tx.send(RuntimeEvent {
+                                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                    message: format!("Performance: {}", performance_report),
+                                    level: "info".to_string(),
+                                }).ok();
+                            },
+                            Err(e) => {
+                                error!("Failed to process and apply to jobs: {}", e);
+                                tx.send(RuntimeEvent {
+                                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                                    message: format!("Failed to apply to jobs: {}", e),
+                                    level: "error".to_string(),
+                                }).ok();
+                            }
+                        }
+                    } else {
+                        info!("No matching jobs found");
+                        tx.send(RuntimeEvent {
+                            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                            message: "No matching jobs found".to_string(),
+                            level: "warn".to_string(),
+                        }).ok();
+                    }
+                },
+                Err(e) => {
+                    error!("Job search failed: {}", e);
+                    tx.send(RuntimeEvent {
+                        timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                        message: format!("Job search failed: {}", e),
+                        level: "error".to_string(),
+                    }).ok();
+                }
+            }
+
+            // Intelligent scheduling based on performance
+            let wait_duration = if config.intelligent_scheduling {
+                let success_rate = adaptive_browser_engine.get_success_rate();
+                if success_rate > 0.8 {
+                    300 // 5 minutes if performing well
+                } else if success_rate > 0.5 {
+                    600 // 10 minutes if performing moderately
+                } else {
+                    1200 // 20 minutes if performing poorly
+                }
+            } else {
+                600 // Default 10 minutes
+            };
+
+            info!("Waiting {} seconds before next search cycle...", wait_duration);
+            tokio::time::sleep(tokio::time::Duration::from_secs(wait_duration)).await;
+        }
+    });
 }

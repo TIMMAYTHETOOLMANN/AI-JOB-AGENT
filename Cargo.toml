@@ -22,6 +22,7 @@ url = "2.5"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.8"
+eframe = "0.27"
 
 # Mock browser for testing without external dependencies
 [features]
