@@ -12,7 +12,7 @@ use crate::config;
 // === JARVIS 2.0 AUTONOMY INJECTION ===
 // Global runtime monitoring, recursive troubleshooting, self-heal, full-stack autonomy
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RuntimeEvent {
     pub timestamp: String,
     pub message: String,
