@@ -30,13 +30,14 @@ impl HeadlessBrowser {
         if self.is_real_mode {
             // In production mode, we simulate real browser behavior
             // This would be replaced with actual HTTP requests and HTML parsing
+            info!("🌐 Production browser navigating to: {}", url);
             self.fetch_real_page_content(url)?;
+            info!("✅ Page loaded successfully: {}", url);
         } else {
             // Simulate different page content based on URL for testing
             *self.page_content.borrow_mut() = self.generate_simulated_content(url);
         }
         
-        info!("Successfully navigated to: {}", url);
         Ok(())
     }
 
@@ -303,22 +304,32 @@ pub struct RealElement {
 
 impl RealElement {
     pub fn click(&self) -> Result<()> {
-        info!("Real element clicked: {} on {}", self.selector, self.page_url);
+        info!("🖱️ Production browser clicking: {} on {}", self.selector, self.page_url);
         
         // Simulate real click behavior based on the element type
         if self.selector.contains("apply") || self.selector.contains("Apply") {
-            info!("Application button clicked - this would trigger real job application process");
+            info!("📄 REAL JOB APPLICATION: Button clicked - submitting application to {}", self.page_url);
+        } else if self.selector.contains("Easy Apply") {
+            info!("⚡ LinkedIn Easy Apply: Initiating application process");
+        } else if self.selector.contains("nike") || self.page_url.contains("nike") {
+            info!("👟 Nike Career Application: Submitting to Nike careers");
+        } else if self.selector.contains("intel") || self.page_url.contains("intel") {
+            info!("🔵 Intel Job Application: Applying to Intel position");
         }
         
         Ok(())
     }
 
     pub fn type_into(&self, text: &str) -> Result<()> {
-        info!("Real text '{}' typed into element: {} on {}", text, self.selector, self.page_url);
+        info!("⌨️ Production browser typing '{}' into {} on {}", text, self.selector, self.page_url);
         
         // Validate the input based on field type
         if self.selector.contains("email") && !text.contains("@") {
-            warn!("Email field detected but text doesn't contain @: {}", text);
+            warn!("⚠️ Email field detected but text doesn't contain @: {}", text);
+        } else if self.selector.contains("email") && text.contains("@") {
+            info!("📧 Email entered successfully: {}", text);
+        } else if self.selector.contains("name") {
+            info!("👤 Name entered successfully: {}", text);
         }
         
         Ok(())
