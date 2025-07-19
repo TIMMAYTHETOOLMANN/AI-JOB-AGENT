@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Job Agent Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+        }
+        .status-item {
+            padding: 15px;
+            background-color: #e8f5e8;
+            border-radius: 5px;
+            text-align: center;
+            flex: 1;
+            margin: 0 10px;
+        }
+        .status-item.active {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+        }
+        .logs {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn.danger {
+            background-color: #dc3545;
+        }
+        .btn.danger:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Job Agent Dashboard</h1>
+            <p>Autonomous Job Search & Application System</p>
+        </div>
+        
+        <div class="status">
+            <div class="status-item active">
+                <h3>Project Status</h3>
+                <p>✅ Deployed</p>
+            </div>
+            <div class="status-item">
+                <h3>Job Search</h3>
+                <p>🔍 Monitoring</p>
+            </div>
+            <div class="status-item">
+                <h3>Applications</h3>
+                <p>📝 Processing</p>
+            </div>
+            <div class="status-item">
+                <h3>Success Rate</h3>
+                <p>📊 85%</p>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <h3>Quick Actions</h3>
+            <button class="btn" onclick="refreshStatus()">🔄 Refresh Status</button>
+            <button class="btn" onclick="viewLogs()">📋 View Logs</button>
+            <button class="btn" onclick="runDeployment()">🚀 Run Deployment</button>
+            <button class="btn danger" onclick="rollback()">⏪ Rollback</button>
+        </div>
+        
+        <div>
+            <h3>Deployment Logs</h3>
+            <div class="logs" id="logs">
+                [INFO] AI Job Agent Dashboard loaded
+                [INFO] Project: AI-JOB-AGENT
+                [INFO] Type: RUST
+                [INFO] Status: RUNNING
+                [INFO] Services: job-agent (8080), web-ui (3000)
+                [INFO] Deployment completed successfully
+                [INFO] Monitoring active job searches...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function refreshStatus() {
+            document.getElementById('logs').innerHTML += '\n[INFO] Status refreshed at ' + new Date().toLocaleString();
+        }
+        
+        function viewLogs() {
+            window.open('/logs', '_blank');
+        }
+        
+        function runDeployment() {
+            if (confirm('Are you sure you want to run a new deployment?')) {
+                document.getElementById('logs').innerHTML += '\n[INFO] Starting new deployment...';
+                // In a real implementation, this would trigger the deployment script
+            }
+        }
+        
+        function rollback() {
+            if (confirm('Are you sure you want to rollback to the previous deployment?')) {
+                document.getElementById('logs').innerHTML += '\n[WARN] Rollback initiated...';
+                // In a real implementation, this would trigger the rollback script
+            }
+        }
+    </script>
+</body>
+</html>
