@@ -8,6 +8,7 @@ mod application_state;
 mod job_search_engine;
 mod job_application;
 mod secrets;
+mod credential_auth;
 mod job_listing;
 mod nike_career;
 mod company_career;
@@ -28,11 +29,11 @@ mod headless_browser;
 use headless_browser::HeadlessBrowser;
 
 use crate::config::Config;
-use crate::application_state::{ApplicationState, SharedApplicationState};
+use crate::application_state::{ApplicationState};
 use crate::job_search_engine::search_jobs;
-use crate::job_application::process_and_apply_to_jobs;
-use crate::secrets::load_secrets;
-use crate::globalization::{GlobalConfig, detect_locale, get_regional_job_boards};
+use crate::secrets::{CredentialManager};
+use crate::credential_auth::{authenticate_all_platforms};
+use crate::globalization::{GlobalConfig};
 use crate::adaptive_browser::{AdaptiveBrowserEngine, AdaptiveBrowserConfig};
 use crate::main_gui::RuntimeEvent;
 use std::sync::mpsc::{self, Sender};
@@ -214,14 +215,31 @@ fn agent_main_cli() {
             }
         };
 
-        // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
-        let secrets = load_secrets("AgentSecrets.template");
+        // Enhanced credential management system  
+        info!("Loading credentials from multiple sources...");
+        let credential_manager = match CredentialManager::load_all_credentials() {
+            Ok(manager) => {
+                info!("✅ Credential manager initialized successfully");
+                let available_platforms = manager.get_available_platforms();
+                if available_platforms.is_empty() {
+                    info!("⚠️  No valid credentials found. You may need to set environment variables or update AgentSecrets.template");
+                } else {
+                    info!("📋 Available platforms: {}", available_platforms.join(", "));
+                }
+                manager
+            },
+            Err(e) => {
+                error!("❌ Failed to initialize credential manager: {}", e);
+                eprintln!("✗ Failed to load credentials: {}", e);
+                return;
+            }
+        };
 
-        // Inject secrets into config if present (overrides AgentConfig.toml if filled)
-        let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
-        let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
-        let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
-        let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
+        // Get agent info from credentials (overrides config if present)
+        let name = credential_manager.get_agent_info("AGENT_NAME").cloned().unwrap_or(config.name.clone());
+        let email = credential_manager.get_agent_info("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
+        let resume_path = credential_manager.get_agent_info("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
+        let cover_letter_path = credential_manager.get_agent_info("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
 
         println!("Agent Name: {}", name);
         println!("Agent Email: {}", email);
@@ -285,9 +303,9 @@ fn agent_main_cli() {
                         let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
 
                         // Apply to jobs with enhanced capabilities
-                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
-                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
-                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                        let smtp_server = credential_manager.agent_info.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = credential_manager.agent_info.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = credential_manager.agent_info.get("SMTP_PASSWORD").cloned().unwrap_or_default();
 
                         // Enhanced application process with adaptive features
                         match process_and_apply_to_jobs_enhanced(
@@ -411,29 +429,62 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
             }
         };
 
-        // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
-        let secrets = load_secrets("AgentSecrets.template");
+        // Enhanced credential management system
+        info!("Loading credentials from multiple sources...");
+        let mut credential_manager = match CredentialManager::load_all_credentials() {
+            Ok(manager) => {
+                info!("✅ Credential manager initialized successfully");
+                let available_platforms = manager.get_available_platforms();
+                if available_platforms.is_empty() {
+                    info!("⚠️  No valid credentials found. You may need to set environment variables or update AgentSecrets.template");
+                } else {
+                    info!("📋 Available platforms: {}", available_platforms.join(", "));
+                }
+                manager
+            },
+            Err(e) => {
+                error!("❌ Failed to initialize credential manager: {}", e);
+                tx.send(RuntimeEvent {
+                    timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                    message: format!("Failed to load credentials: {}", e),
+                    level: "error".to_string(),
+                }).ok();
+                return;
+            }
+        };
 
-        // Inject secrets into config if present (overrides AgentConfig.toml if filled)
-        let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
-        let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
-        let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
-        let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
+        // Get agent info from credentials (overrides config if present)
+        let name = credential_manager.get_agent_info("AGENT_NAME").cloned().unwrap_or(config.name.clone());
+        let email = credential_manager.get_agent_info("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
+        let resume_path = credential_manager.get_agent_info("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
+        let cover_letter_path = credential_manager.get_agent_info("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
 
-        // Platform credentials (example: LinkedIn, Indeed, etc.)
-        let linkedin_email = secrets.get("LINKEDIN_EMAIL").cloned().unwrap_or_default();
-        let linkedin_password = secrets.get("LINKEDIN_PASSWORD").cloned().unwrap_or_default();
-        let indeed_email = secrets.get("INDEED_EMAIL").cloned().unwrap_or_default();
-        let indeed_password = secrets.get("INDEED_PASSWORD").cloned().unwrap_or_default();
-        let glassdoor_email = secrets.get("GLASSDOOR_EMAIL").cloned().unwrap_or_default();
-        let glassdoor_password = secrets.get("GLASSDOOR_PASSWORD").cloned().unwrap_or_default();
-        let monster_email = secrets.get("MONSTER_EMAIL").cloned().unwrap_or_default();
-        let monster_password = secrets.get("MONSTER_PASSWORD").cloned().unwrap_or_default();
-        let ziprecruiter_email = secrets.get("ZIPRECRUITER_EMAIL").cloned().unwrap_or_default();
-        let ziprecruiter_password = secrets.get("ZIPRECRUITER_PASSWORD").cloned().unwrap_or_default();
-        let careerbuilder_email = secrets.get("CAREERBUILDER_EMAIL").cloned().unwrap_or_default();
-        let careerbuilder_password = secrets.get("CAREERBUILDER_PASSWORD").cloned().unwrap_or_default();
-        // ...pass these to platform modules as needed...
+        info!("Agent: {} <{}>", name, email);
+        info!("Resume: {}", resume_path);
+        info!("Cover Letter: {}", cover_letter_path);
+
+        // Authenticate with platforms (fetch API tokens)
+        info!("🔐 Authenticating with job platforms...");
+        let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
+        let authenticated_platforms = match rt.block_on(authenticate_all_platforms(&mut credential_manager)) {
+            Ok(platforms) => {
+                info!("✅ Authentication completed for {} platforms", platforms.len());
+                platforms
+            },
+            Err(e) => {
+                error!("⚠️  Authentication failed: {}", e);
+                vec![]
+            }
+        };
+
+        tx.send(RuntimeEvent {
+            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+            message: format!("Authenticated with {} platforms: {}", 
+                authenticated_platforms.len(), 
+                authenticated_platforms.join(", ")
+            ),
+            level: "info".to_string(),
+        }).ok();
 
         // Create application state
         let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
@@ -495,9 +546,9 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
                         let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
 
                         // Apply to jobs with enhanced capabilities
-                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
-                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
-                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+                        let smtp_server = credential_manager.agent_info.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = credential_manager.agent_info.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = credential_manager.agent_info.get("SMTP_PASSWORD").cloned().unwrap_or_default();
 
                         // Enhanced application process with adaptive features
                         match process_and_apply_to_jobs_enhanced(

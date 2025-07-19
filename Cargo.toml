@@ -24,6 +24,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.8"
 eframe = "0.27"
 regex = "1.10"
+reqwest = { version = "0.11", features = ["json", "cookies"] }
+tokio-util = "0.7"
 
 # Mock browser for testing without external dependencies
 [features]
@@ -38,3 +40,7 @@ path = "src/main.rs"
 [[bin]]
 name = "test_config"
 path = "src/bin/test_config.rs"
+
+[[bin]]
+name = "test_credentials"
+path = "src/bin/test_credentials.rs"

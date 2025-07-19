@@ -6,6 +6,7 @@ pub mod document_profile;
 pub mod job_listing;
 pub mod mock_browser;
 pub mod secrets;
+pub mod credential_auth;
 pub mod linkedin_login;
 pub mod nike_career;
 pub mod company_career;
