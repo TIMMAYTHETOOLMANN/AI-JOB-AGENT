@@ -468,6 +468,7 @@ dependencies = [
  "eframe",
  "futures",
  "rand",
+ "regex",
  "serde",
  "serde_json",
  "tokio",

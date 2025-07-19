@@ -38,14 +38,31 @@ use crate::main_gui::RuntimeEvent;
 use std::sync::mpsc::{self, Sender};
 
 fn main() {
+    // Check for CLI mode flag
+    let args: Vec<String> = std::env::args().collect();
+    let cli_mode = args.iter().any(|arg| arg == "--cli" || arg == "--headless");
+    
     let (tx, rx) = mpsc::channel();
-    // Launch agent logic in a background thread with its own tokio runtime
-    let agent_tx = tx.clone();
-    std::thread::spawn(move || {
-        agent_main(agent_tx);
-    });
-    // Run the GUI on the main thread
-    main_gui::run_gui(rx);
+    
+    if cli_mode {
+        println!("=== AI Job Agent - CLI Mode ===");
+        println!("Running in headless mode without GUI...");
+        
+        // Run agent directly in main thread for CLI mode
+        agent_main_cli();
+    } else {
+        println!("=== AI Job Agent - GUI Mode ===");
+        println!("Starting with GUI interface...");
+        
+        // Launch agent logic in a background thread with its own tokio runtime
+        let agent_tx = tx.clone();
+        std::thread::spawn(move || {
+            agent_main(agent_tx);
+        });
+        
+        // Run the GUI on the main thread
+        main_gui::run_gui(rx);
+    }
 }
 
 /// Enhanced job application processing with adaptive automation and global support
@@ -143,6 +160,200 @@ async fn process_and_apply_to_jobs_enhanced(
     Ok(applied_count)
 }
 
+fn agent_main_cli() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        // Initialize logging for CLI mode
+        tracing_subscriber::fmt()
+            .with_env_filter(EnvFilter::from_default_env())
+            .with_writer(std::io::stdout)
+            .init();
+
+        println!("=== Autonomous Job Agent CLI - Starting ===");
+        
+        // Print current working directory
+        let current_dir = std::env::current_dir().unwrap_or_default();
+        println!("Current working directory: {:?}", current_dir);
+
+        // Check if AgentConfig.toml exists
+        let config_path = "AgentConfig.toml";
+        let absolute_path = current_dir.join(config_path);
+        println!("Configuration file: {:?}", absolute_path);
+        println!("Configuration exists: {}", absolute_path.exists());
+
+        if absolute_path.exists() {
+            if let Ok(metadata) = std::fs::metadata(&absolute_path) {
+                println!("Configuration size: {} bytes", metadata.len());
+            }
+        }
+
+        // Load configuration
+        let config = match Config::load(config_path) {
+            Ok(config) => {
+                info!("Configuration loaded successfully");
+                println!("✓ Configuration loaded successfully");
+                
+                // Perform comprehensive validation and context gathering
+                match config.validate_and_gather_context() {
+                    Ok(report) => {
+                        println!("📋 Configuration Validation Report:");
+                        report.print_summary();
+                        config
+                    },
+                    Err(e) => {
+                        error!("Configuration validation failed: {}", e);
+                        eprintln!("✗ Configuration validation failed: {}", e);
+                        return;
+                    }
+                }
+            },
+            Err(e) => {
+                error!("Failed to load configuration: {}", e);
+                eprintln!("✗ Failed to load configuration: {}", e);
+                return;
+            }
+        };
+
+        // Load secrets from AgentSecrets.template (or .env/AgentSecrets.toml)
+        let secrets = load_secrets("AgentSecrets.template");
+
+        // Inject secrets into config if present (overrides AgentConfig.toml if filled)
+        let name = secrets.get("AGENT_NAME").cloned().unwrap_or(config.name.clone());
+        let email = secrets.get("AGENT_EMAIL").cloned().unwrap_or(config.email.clone());
+        let resume_path = secrets.get("RESUME_PATH").cloned().unwrap_or(config.resume_path.clone());
+        let cover_letter_path = secrets.get("COVER_LETTER_PATH").cloned().unwrap_or(config.cover_letter_path.clone());
+
+        println!("Agent Name: {}", name);
+        println!("Agent Email: {}", email);
+        println!("Resume Path: {}", resume_path);
+        println!("Cover Letter Path: {}", cover_letter_path);
+
+        // Create application state
+        let app_state = Arc::new(Mutex::new(ApplicationState::new("state/job_state.json")));
+        info!("Application state initialized");
+        println!("✓ Application state initialized");
+
+        // Initialize global configuration for internationalization
+        let global_config = GlobalConfig::default();
+        let detected_locale = config.get_effective_locale();
+        let effective_currency = config.get_effective_currency();
+        info!("Detected locale: {}, Currency: {}", detected_locale, effective_currency);
+        println!("✓ Locale: {}, Currency: {}", detected_locale, effective_currency);
+
+        // Initialize adaptive browser engine
+        let adaptive_config = AdaptiveBrowserConfig::default();
+        let mut adaptive_browser_engine = AdaptiveBrowserEngine::new(adaptive_config);
+        info!("Adaptive browser engine initialized");
+        println!("✓ Adaptive browser engine initialized");
+
+        // Initialize headless browser
+        let browser = match HeadlessBrowser::new() {
+            Ok(browser) => {
+                info!("Headless browser initialized successfully");
+                println!("✓ Mock browser initialized successfully");
+                Some(browser)
+            },
+            Err(e) => {
+                error!("Failed to initialize headless browser: {}", e);
+                println!("⚠ Failed to initialize browser, continuing without automation: {}", e);
+                None
+            }
+        };
+
+        println!("\n=== Starting Job Search Cycles ===");
+        let mut cycle_count = 0;
+
+        // Continuous execution loop
+        loop {
+            cycle_count += 1;
+            println!("\n--- Job Search Cycle #{} ---", cycle_count);
+            info!("Starting job search cycle #{}", cycle_count);
+
+            // Enhanced search with global job boards
+            let all_job_boards = config.get_all_job_boards();
+            info!("Searching across {} job boards (including international)", all_job_boards.len());
+            println!("Searching across {} job boards (including international)", all_job_boards.len());
+
+            // Search for jobs
+            match search_jobs(&config).await {
+                Ok(job_listings) => {
+                    if !job_listings.is_empty() {
+                        debug!("Found {} job listings", job_listings.len());
+                        println!("✓ Found {} job listings", job_listings.len());
+                        
+                        // Extract URLs from job listings
+                        let urls: Vec<String> = job_listings.iter().map(|job| job.url.clone()).collect();
+
+                        // Apply to jobs with enhanced capabilities
+                        let smtp_server = secrets.get("SMTP_SERVER").cloned().unwrap_or_else(|| "smtp.gmail.com".to_string());
+                        let smtp_username = secrets.get("SMTP_USERNAME").cloned().unwrap_or_default();
+                        let smtp_password = secrets.get("SMTP_PASSWORD").cloned().unwrap_or_default();
+
+                        // Enhanced application process with adaptive features
+                        match process_and_apply_to_jobs_enhanced(
+                            &urls,
+                            &name,
+                            &email,
+                            &resume_path,
+                            &cover_letter_path,
+                            &config.job_keywords,
+                            Some(app_state.clone()),
+                            config.resume_profiles.as_deref(),
+                            config.cover_letter_profiles.as_deref(),
+                            &config.industries,
+                            &config.seniority_levels,
+                            browser.as_ref(),
+                            Some((&smtp_server, &smtp_username, &smtp_password)),
+                            &mut adaptive_browser_engine,
+                            &global_config,
+                            &config,
+                        ).await {
+                            Ok(applied_count) => {
+                                info!("Applied to {} jobs with enhanced adaptive automation", applied_count);
+                                println!("✓ Applied to {} jobs successfully", applied_count);
+
+                                // Log performance metrics
+                                let performance_report = adaptive_browser_engine.get_performance_report();
+                                info!("Adaptive Browser Performance:\n{}", performance_report);
+                                println!("Performance Report:\n{}", performance_report);
+                            },
+                            Err(e) => {
+                                error!("Failed to process and apply to jobs: {}", e);
+                                println!("✗ Failed to process jobs: {}", e);
+                            }
+                        }
+                    } else {
+                        info!("No matching jobs found");
+                        println!("⚠ No matching jobs found");
+                    }
+                },
+                Err(e) => {
+                    error!("Job search failed: {}", e);
+                    println!("✗ Job search failed: {}", e);
+                }
+            }
+
+            // Intelligent scheduling based on performance
+            let wait_duration = if config.intelligent_scheduling {
+                let success_rate = adaptive_browser_engine.get_success_rate();
+                if success_rate > 0.8 {
+                    300 // 5 minutes if performing well
+                } else if success_rate > 0.5 {
+                    600 // 10 minutes if performing moderately
+                } else {
+                    1200 // 20 minutes if performing poorly
+                }
+            } else {
+                600 // Default 10 minutes
+            };
+
+            println!("Waiting {} seconds before next search cycle...", wait_duration);
+            info!("Waiting {} seconds before next search cycle...", wait_duration);
+            tokio::time::sleep(tokio::time::Duration::from_secs(wait_duration)).await;
+        }
+    });
+}
+
 fn agent_main(tx: Sender<RuntimeEvent>) {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
@@ -170,7 +381,24 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
         let config = match Config::load(config_path) {
             Ok(config) => {
                 info!("Configuration loaded successfully");
-                config
+                
+                // Perform comprehensive validation and context gathering
+                match config.validate_and_gather_context() {
+                    Ok(report) => {
+                        info!("Configuration validation completed successfully");
+                        report.print_summary();  // This will print to stdout for GUI mode
+                        config
+                    },
+                    Err(e) => {
+                        error!("Configuration validation failed: {}", e);
+                        tx.send(RuntimeEvent {
+                            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                            message: format!("Configuration validation failed: {}", e),
+                            level: "error".to_string(),
+                        }).ok();
+                        return;
+                    }
+                }
             },
             Err(e) => {
                 error!("Failed to load configuration: {}", e);
