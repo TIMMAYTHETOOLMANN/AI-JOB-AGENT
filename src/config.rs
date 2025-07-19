@@ -71,6 +71,31 @@ pub struct Config {
     pub intelligent_scheduling: bool,
     #[serde(default)]
     pub a_b_testing_enabled: bool,
+    
+    // NEW: Account creation settings
+    #[serde(default)]
+    pub account_creation: Option<AccountCreationConfig>,
+    
+    // Runtime secrets (not serialized)
+    #[serde(skip)]
+    pub secrets: HashMap<String, String>,
+}
+
+/// Account creation configuration
+#[derive(Debug, Clone, Deserialize)]
+pub struct AccountCreationConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub use_resume_data: bool,
+    #[serde(default)]
+    pub use_cover_letter_data: bool,
+    #[serde(default)]
+    pub auto_verify_email: bool,
+    #[serde(default)]
+    pub create_professional_profiles: bool,
+    #[serde(default)]
+    pub upload_documents_automatically: bool,
 }
 
 
@@ -83,8 +108,22 @@ impl Config {
 
         // Try to parse the TOML
         match toml::from_str::<Self>(&content) {
-            Ok(config) => {
+            Ok(mut config) => {
                 println!("Successfully parsed config");
+                
+                // Load secrets
+                config.secrets = crate::secrets::load_secrets("AgentSecrets.template");
+                if config.secrets.is_empty() {
+                    // Also try .env
+                    config.secrets = crate::secrets::load_secrets(".env");
+                }
+                if config.secrets.is_empty() {
+                    // Also try AgentSecrets.toml
+                    config.secrets = crate::secrets::load_secrets("AgentSecrets.toml");
+                }
+                
+                println!("Loaded {} secret values", config.secrets.len());
+                
                 Ok(config)
             },
             Err(e) => {
