@@ -1,0 +1,17 @@
+[Unit]
+Description=AI Job Agent
+After=network.target
+
+[Service]
+Type=simple
+User=runner
+WorkingDirectory=/home/runner/work/AI-JOB-AGENT/AI-JOB-AGENT
+ExecStart=/home/runner/work/AI-JOB-AGENT/AI-JOB-AGENT/run_job_agent.sh --cli
+Restart=on-failure
+RestartSec=30
+Environment=RUST_LOG=info
+Environment=RUST_BACKTRACE=1
+Environment=DISPLAY=:99
+
+[Install]
+WantedBy=multi-user.target

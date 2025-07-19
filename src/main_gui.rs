@@ -12,7 +12,7 @@ use crate::config;
 // === JARVIS 2.0 AUTONOMY INJECTION ===
 // Global runtime monitoring, recursive troubleshooting, self-heal, full-stack autonomy
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct RuntimeEvent {
     pub timestamp: String,
     pub message: String,
@@ -129,9 +129,12 @@ impl eframe::App for AgentMonitorApp {
 pub fn run_gui(rx: Receiver<RuntimeEvent>) {
     let app = AgentMonitorApp::new(rx);
     let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
+    if let Err(e) = eframe::run_native(
         "JARVIS 2.0 - Global Autonomous Job Agent Monitor",
         native_options,
         Box::new(|_cc| Box::new(app)),
-    );
+    ) {
+        eprintln!("Failed to run GUI: {}", e);
+        std::process::exit(1);
+    }
 }
