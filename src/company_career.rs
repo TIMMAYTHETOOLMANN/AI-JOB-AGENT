@@ -8,6 +8,9 @@ use crate::headless_browser::HeadlessBrowser;
 #[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
 use crate::mock_browser::HeadlessBrowser;
 
+#[cfg(all(not(feature = "headless-chrome"), not(feature = "mock-browser")))]
+type HeadlessBrowser = crate::mock_browser::HeadlessBrowser;
+
 /// Attempts to log in and apply to a job on a generic company career site.
 /// Handles self-healing for dead links, login errors, and already-applied jobs.
 pub async fn apply_company_job(

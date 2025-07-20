@@ -14,6 +14,7 @@ pub mod adaptive_browser;
 pub mod main_gui;
 pub mod job_filter;
 pub mod reporting;
+pub mod visible_browser;
 
 #[cfg(any(feature = "mock-browser", not(feature = "headless-chrome")))]
 pub mod mock_browser;
