@@ -10,6 +10,9 @@ use crate::headless_browser::HeadlessBrowser;
 #[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
 use crate::mock_browser::HeadlessBrowser;
 
+#[cfg(all(not(feature = "headless-chrome"), not(feature = "mock-browser")))]
+type HeadlessBrowser = crate::mock_browser::HeadlessBrowser;
+
 /// Adaptive browser strategies for different job sites and scenarios
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdaptiveBrowserConfig {
@@ -296,7 +299,131 @@ impl AdaptiveBrowserEngine {
         &self.config.default_strategy
     }
 
-    /// Adaptively apply to a job with retries and fallbacks
+    /// Adaptively apply to a job with retries and fallbacks (for visible browser)
+    pub async fn adaptive_apply_visible(
+        &mut self,
+        browser: &crate::visible_browser::VisibleBrowser,
+        url: &str,
+        name: &str,
+        email: &str,
+        resume_path: &str,
+        cover_letter_path: &str,
+    ) -> Result<String> {
+        let start_time = SystemTime::now();
+        let strategy = self.get_strategy_for_url(url).clone();
+        let domain = self.extract_domain(url);
+
+        self.update_attempt_metrics(&domain);
+
+        let mut last_error = None;
+        
+        for attempt in 1..=strategy.error_handling.max_retries {
+            match self.try_apply_with_strategy_visible(
+                browser, 
+                url, 
+                name, 
+                email, 
+                resume_path, 
+                cover_letter_path, 
+                &strategy
+            ).await {
+                Ok(result) => {
+                    let duration = start_time.elapsed().unwrap_or(Duration::ZERO);
+                    self.update_success_metrics(&domain, duration);
+                    info!("Successfully applied to {} on attempt {}", url, attempt);
+                    return Ok(result);
+                },
+                Err(e) => {
+                    last_error = Some(e);
+                    warn!("Attempt {} failed for {}: {}", attempt, url, last_error.as_ref().unwrap());
+                    
+                    if attempt < strategy.error_handling.max_retries {
+                        let delay = self.calculate_retry_delay(attempt, &strategy.error_handling);
+                        info!("Retrying in {}ms...", delay);
+                        tokio::time::sleep(Duration::from_millis(delay)).await;
+                    }
+                }
+            }
+        }
+
+        let duration = start_time.elapsed().unwrap_or(Duration::ZERO);
+        self.update_failure_metrics(&domain, duration);
+        
+        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("All retry attempts failed for {}", url)))
+    }
+    
+    /// Try to apply using a specific strategy (for visible browser)
+    async fn try_apply_with_strategy_visible(
+        &self,
+        browser: &crate::visible_browser::VisibleBrowser,
+        url: &str,
+        name: &str,
+        email: &str,
+        _resume_path: &str,
+        _cover_letter_path: &str,
+        strategy: &SiteStrategy,
+    ) -> Result<String> {
+        // Navigate to the job page
+        browser.navigate_to(url)
+            .context("Failed to navigate to job page")?;
+
+        // Wait for page to load
+        tokio::time::sleep(Duration::from_millis(strategy.timing.page_load_timeout)).await;
+
+        // Try to find and click apply button with multiple selectors
+        let mut apply_clicked = false;
+        for selector in &strategy.selectors.apply_button {
+            if let Ok(_) = browser.click_element(selector) {
+                apply_clicked = true;
+                debug!("Successfully clicked apply button with selector: {}", selector);
+                break;
+            }
+        }
+
+        if !apply_clicked {
+            return Err(anyhow::anyhow!("Could not find apply button with any selector"));
+        }
+
+        // Wait for application form to load
+        tokio::time::sleep(Duration::from_millis(strategy.timing.element_wait_timeout)).await;
+
+        // Fill out name field
+        let mut name_filled = false;
+        for selector in &strategy.selectors.name_field {
+            if let Ok(_) = browser.type_text(selector, name) {
+                name_filled = true;
+                debug!("Successfully filled name with selector: {}", selector);
+                break;
+            }
+        }
+
+        // Fill out email field
+        let mut email_filled = false;
+        for selector in &strategy.selectors.email_field {
+            if let Ok(_) = browser.type_text(selector, email) {
+                email_filled = true;
+                debug!("Successfully filled email with selector: {}", selector);
+                break;
+            }
+        }
+
+        // Try to submit the application
+        let mut submitted = false;
+        for selector in &strategy.selectors.submit_button {
+            if let Ok(_) = browser.click_element(selector) {
+                submitted = true;
+                debug!("Successfully submitted with selector: {}", selector);
+                break;
+            }
+        }
+
+        if !submitted {
+            return Err(anyhow::anyhow!("Could not submit application"));
+        }
+
+        Ok(format!("Application submitted successfully to {} (Name: {}, Email: {})", 
+                  url, name_filled, email_filled))
+    }
     pub async fn adaptive_apply(
         &mut self,
         browser: &HeadlessBrowser,

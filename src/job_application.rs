@@ -13,6 +13,9 @@ use crate::headless_browser::HeadlessBrowser;
 #[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
 use crate::mock_browser::HeadlessBrowser;
 
+#[cfg(all(not(feature = "headless-chrome"), not(feature = "mock-browser")))]
+use crate::mock_browser::HeadlessBrowser;
+
 /// Processes a batch of job URLs and applies to matching jobs
 pub async fn process_and_apply_to_jobs(
     urls: &[String],

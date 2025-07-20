@@ -27,9 +27,10 @@ regex = "1.10"
 
 # Browser automation features
 [features]
-default = ["headless-chrome"]
+default = ["visible-chrome", "mock-browser"]
 mock-browser = []
 headless-chrome = []
+visible-chrome = []
 
 [[bin]]
 name = "autonomous_job_agent"
