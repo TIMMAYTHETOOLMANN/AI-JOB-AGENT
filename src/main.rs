@@ -16,6 +16,7 @@ mod profile_selector;
 mod globalization;
 mod adaptive_browser;
 mod main_gui;
+mod account_creator;
 
 #[cfg(feature = "mock-browser")]
 mod mock_browser;
@@ -39,6 +40,7 @@ use crate::secrets::load_secrets;
 use crate::globalization::{GlobalConfig, detect_locale, get_regional_job_boards};
 use crate::adaptive_browser::{AdaptiveBrowserEngine, AdaptiveBrowserConfig};
 use crate::main_gui::RuntimeEvent;
+use crate::account_creator::AccountCreator;
 use std::sync::mpsc::{self, Sender};
 
 fn main() {
@@ -272,6 +274,47 @@ fn agent_main_cli() {
             }
         };
 
+        // Initialize account creator if enabled
+        let account_creator = if config.account_creation.as_ref().map(|ac| ac.enabled).unwrap_or(false) {
+            match AccountCreator::new(&config, secrets.clone()) {
+                Ok(creator) => {
+                    info!("Account creator initialized");
+                    println!("✓ Account creator initialized");
+                    Some(creator)
+                },
+                Err(e) => {
+                    error!("Failed to initialize account creator: {}", e);
+                    println!("⚠ Failed to initialize account creator: {}", e);
+                    None
+                }
+            }
+        } else {
+            info!("Account creation disabled in configuration");
+            println!("ℹ Account creation disabled in configuration");
+            None
+        };
+
+        // Create accounts if account creator is available and browser is working
+        if let (Some(creator), Some(ref browser)) = (&account_creator, &browser) {
+            info!("Creating accounts on major job sites...");
+            println!("\n=== Creating Accounts on Major Job Sites ===");
+            
+            match creator.create_all_accounts(browser).await {
+                Ok(results) => {
+                    for result in results {
+                        info!("Account creation result: {}", result);
+                        println!("✓ {}", result);
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to create accounts: {}", e);
+                    println!("⚠ Failed to create accounts: {}", e);
+                }
+            }
+            
+            println!("=== Account creation phase completed ===\n");
+        }
+
         println!("\n=== Starting Job Search Cycles ===");
         let mut cycle_count = 0;
 
@@ -481,6 +524,70 @@ fn agent_main(tx: Sender<RuntimeEvent>) {
                 None
             }
         };
+
+        // Initialize account creator if enabled
+        let account_creator = if config.account_creation.as_ref().map(|ac| ac.enabled).unwrap_or(false) {
+            match AccountCreator::new(&config, secrets.clone()) {
+                Ok(creator) => {
+                    info!("Account creator initialized");
+                    tx.send(RuntimeEvent {
+                        timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                        message: "Account creator initialized".to_string(),
+                        level: "info".to_string(),
+                    }).ok();
+                    Some(creator)
+                },
+                Err(e) => {
+                    error!("Failed to initialize account creator: {}", e);
+                    tx.send(RuntimeEvent {
+                        timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                        message: format!("Failed to initialize account creator: {}", e),
+                        level: "warn".to_string(),
+                    }).ok();
+                    None
+                }
+            }
+        } else {
+            info!("Account creation disabled in configuration");
+            None
+        };
+
+        // Create accounts if account creator is available and browser is working
+        if let (Some(creator), Some(ref browser)) = (&account_creator, &browser) {
+            info!("Creating accounts on major job sites...");
+            tx.send(RuntimeEvent {
+                timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                message: "Creating accounts on major job sites...".to_string(),
+                level: "info".to_string(),
+            }).ok();
+            
+            match creator.create_all_accounts(browser).await {
+                Ok(results) => {
+                    for result in &results {
+                        info!("Account creation result: {}", result);
+                        tx.send(RuntimeEvent {
+                            timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                            message: result.clone(),
+                            level: "info".to_string(),
+                        }).ok();
+                    }
+                    
+                    tx.send(RuntimeEvent {
+                        timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                        message: format!("Account creation completed: {} results", results.len()),
+                        level: "info".to_string(),
+                    }).ok();
+                },
+                Err(e) => {
+                    error!("Failed to create accounts: {}", e);
+                    tx.send(RuntimeEvent {
+                        timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+                        message: format!("Failed to create accounts: {}", e),
+                        level: "error".to_string(),
+                    }).ok();
+                }
+            }
+        }
 
         // Example: send a startup event
         tx.send(RuntimeEvent {

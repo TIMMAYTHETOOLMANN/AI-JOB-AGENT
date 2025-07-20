@@ -27,9 +27,47 @@ min_salary = 50000
 max_salary = 200000
 
 targets = [
+    # Primary Global Job Sites
     "https://indeed.com", "https://linkedin.com/jobs", "https://glassdoor.com",
     "https://monster.com", "https://ziprecruiter.com", "https://careerbuilder.com",
-    "https://simplyhired.com", "Company career pages", "All available job boards"
+    "https://simplyhired.com", "https://dice.com", "https://stackoverflow.com/jobs",
+    
+    # European Job Sites
+    "https://stepstone.com", "https://jobs.eu", "https://eurojobs.com",
+    "https://xing.com", "https://jobware.de", "https://jobvector.de",
+    
+    # UK Job Sites  
+    "https://reed.co.uk", "https://totaljobs.com", "https://cv-library.co.uk",
+    "https://jobsite.co.uk", "https://indeed.co.uk",
+    
+    # Canadian Job Sites
+    "https://workopolis.com", "https://jobbank.gc.ca", "https://monster.ca",
+    "https://indeed.ca", "https://linkedin.com/jobs/canada",
+    
+    # Australian Job Sites
+    "https://seek.com.au", "https://careerone.com.au", "https://jora.com.au",
+    "https://indeed.com.au", "https://linkedin.com/jobs/australia",
+    
+    # French Job Sites
+    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com",
+    "https://indeed.fr", "https://linkedin.com/jobs/france",
+    
+    # Asian Job Sites
+    "https://jobsdb.com", "https://jobstreet.com", "https://zhaopin.com",
+    "https://indeed.com.sg", "https://linkedin.com/jobs/singapore",
+    
+    # Tech-Specific Sites
+    "https://angellist.com", "https://github.com/jobs", "https://hired.com",
+    "https://toptal.com", "https://upwork.com",
+    
+    # Major Company Career Pages
+    "https://jobs.intel.com", "https://jobs.nike.com", "https://careers.adidas-group.com",
+    "https://jobs.apple.com", "https://careers.microsoft.com", "https://careers.google.com",
+    "https://amazon.jobs", "https://careers.meta.com", "https://tesla.com/careers",
+    "https://boeing.com/careers", "https://ge.com/careers", "https://ibm.com/careers",
+    
+    # Comprehensive Coverage
+    "Company career pages", "All available job boards", "Global job aggregators"
 ]
 
 # Legacy single resume/cover letter paths (kept for backward compatibility)
@@ -94,7 +132,65 @@ a_b_testing_enabled = true
 
 # Regional job boards for international expansion
 [regional_job_boards]
-EU = ["https://jobs.eu", "https://eurojobs.com", "https://stepstone.com"]
-UK = ["https://reed.co.uk", "https://totaljobs.com", "https://cv-library.co.uk"]
-CA = ["https://workopolis.com", "https://jobbank.gc.ca", "https://monster.ca"]
-AU = ["https://seek.com.au", "https://careerone.com.au"]
+EU = [
+    "https://stepstone.com", "https://jobs.eu", "https://eurojobs.com", 
+    "https://xing.com", "https://jobware.de", "https://jobvector.de",
+    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com"
+]
+UK = [
+    "https://reed.co.uk", "https://totaljobs.com", "https://cv-library.co.uk",
+    "https://jobsite.co.uk", "https://indeed.co.uk", "https://linkedin.com/jobs/united-kingdom"
+]
+CA = [
+    "https://workopolis.com", "https://jobbank.gc.ca", "https://monster.ca",
+    "https://indeed.ca", "https://linkedin.com/jobs/canada"
+]
+AU = [
+    "https://seek.com.au", "https://careerone.com.au", "https://jora.com.au",
+    "https://indeed.com.au", "https://linkedin.com/jobs/australia"
+]
+DE = [
+    "https://stepstone.de", "https://xing.com", "https://jobware.de",
+    "https://jobvector.de", "https://indeed.de", "https://linkedin.com/jobs/germany"
+]
+FR = [
+    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com",
+    "https://indeed.fr", "https://linkedin.com/jobs/france"
+]
+ASIA = [
+    "https://jobsdb.com", "https://jobstreet.com", "https://zhaopin.com",
+    "https://indeed.com.sg", "https://linkedin.com/jobs/singapore",
+    "https://indeed.com.my", "https://indeed.com.hk"
+]
+TECH = [
+    "https://stackoverflow.com/jobs", "https://angellist.com", "https://github.com/jobs",
+    "https://hired.com", "https://toptal.com", "https://dice.com"
+]
+
+# Company-specific career pages for direct application
+[company_career_pages]
+TECH_GIANTS = [
+    "https://jobs.apple.com", "https://careers.microsoft.com", "https://careers.google.com",
+    "https://amazon.jobs", "https://careers.meta.com", "https://tesla.com/careers"
+]
+MANUFACTURING = [
+    "https://jobs.intel.com", "https://jobs.nike.com", "https://careers.adidas-group.com",
+    "https://boeing.com/careers", "https://ge.com/careers", "https://caterpillar.com/careers"
+]
+AUTOMOTIVE = [
+    "https://tesla.com/careers", "https://ford.com/careers", "https://gm.com/careers",
+    "https://bmwgroup.com/careers", "https://mercedes-benz.com/careers"
+]
+INTERNATIONAL_CORPS = [
+    "https://ibm.com/careers", "https://hp.com/careers", "https://oracle.com/careers",
+    "https://sap.com/careers", "https://siemens.com/careers", "https://philips.com/careers"
+]
+
+# Account creation settings for automated registration
+[account_creation]
+enabled = true
+use_resume_data = true
+use_cover_letter_data = true
+auto_verify_email = false  # Set to true if you want to handle email verification
+create_professional_profiles = true
+upload_documents_automatically = true
