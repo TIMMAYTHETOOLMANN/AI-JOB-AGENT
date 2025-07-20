@@ -14,9 +14,13 @@ pub mod adaptive_browser;
 pub mod main_gui;
 pub mod job_filter;
 pub mod reporting;
+pub mod visible_browser;
+pub mod web_server;
+pub mod account_creator;
 
-#[cfg(any(feature = "mock-browser", not(feature = "headless-chrome")))]
-pub mod mock_browser;
-
-#[cfg(feature = "headless-chrome")]
+// Production browser implementation - always available
 pub mod headless_browser;
+
+// Optional mock browser for testing
+#[cfg(feature = "mock-browser")]
+pub mod mock_browser;

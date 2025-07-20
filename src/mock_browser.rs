@@ -73,7 +73,7 @@ impl HeadlessBrowser {
         Ok(self.page_content.borrow().clone())
     }
 
-    pub fn wait_for_element(&self, selector: &str, _timeout_ms: u64) -> Result<MockElement> {
+    pub fn wait_for_element_sync(&self, selector: &str, _timeout_ms: u64) -> Result<MockElement> {
         self.find_element(selector)
     }
 
@@ -91,6 +91,38 @@ impl HeadlessBrowser {
     pub fn close(self) -> Result<()> {
         info!("Mock browser closed");
         Ok(())
+    }
+
+    // Add async compatibility methods for account_creator.rs
+    pub async fn navigate(&self, url: &str) -> Result<()> {
+        self.navigate_to(url)
+    }
+
+    pub async fn fill_field(&self, selector: &str, value: &str) -> Result<()> {
+        debug!("Mock filling field {} with value: {}", selector, value);
+        info!("🖊️ Mock browser filling field: {} = {}", selector, value);
+        // Simulate successful field filling
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        info!("✅ Field filled successfully: {}", selector);
+        Ok(())
+    }
+
+    pub async fn click(&self, selector: &str) -> Result<()> {
+        debug!("Mock clicking element: {}", selector);
+        info!("🖱️ Mock browser clicking: {}", selector);
+        // Simulate successful clicking
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+        info!("✅ Element clicked successfully: {}", selector);
+        Ok(())
+    }
+
+    pub async fn wait_for_element(&self, selector: &str, timeout_ms: u64) -> Result<bool> {
+        debug!("Mock waiting for element: {} (timeout: {}ms)", selector, timeout_ms);
+        info!("⏳ Mock browser waiting for element: {}", selector);
+        // Simulate element detection
+        tokio::time::sleep(std::time::Duration::from_millis(timeout_ms.min(500))).await;
+        info!("✅ Element found: {}", selector);
+        Ok(true)
     }
 }
 

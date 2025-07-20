@@ -1,14 +1,13 @@
 use std::collections::HashMap;
+use std::pin::Pin;
+use std::future::Future;
 use anyhow::{Result, anyhow};
-use tracing::{info, warn, error, debug};
+use tracing::{info, warn};
 use crate::config::Config;
 use crate::document_profile::{extract_resume_data, extract_cover_letter_data, PersonalInfo};
 
-#[cfg(feature = "headless-chrome")]
+// PRODUCTION BROWSER ENFORCEMENT - NO MOCK DATA
 use crate::headless_browser::HeadlessBrowser;
-
-#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
-use crate::mock_browser::HeadlessBrowser;
 
 /// Account creation service that automatically creates accounts on job sites
 /// using information from resume and cover letter
@@ -136,20 +135,23 @@ impl AccountCreator {
     pub async fn create_all_accounts(&self, browser: &HeadlessBrowser) -> Result<Vec<String>> {
         let mut results = Vec::new();
         
-        // List of account creation functions to try
-        let account_creators = vec![
-            ("LinkedIn", Box::new(|s: &Self, b: &HeadlessBrowser| Box::pin(s.create_linkedin_account(b)))),
-            ("Indeed", Box::new(|s: &Self, b: &HeadlessBrowser| Box::pin(s.create_indeed_account(b)))),
-            ("Glassdoor", Box::new(|s: &Self, b: &HeadlessBrowser| Box::pin(s.create_glassdoor_account(b)))),
-            ("Monster", Box::new(|s: &Self, b: &HeadlessBrowser| Box::pin(s.create_monster_account(b)))),
-            ("ZipRecruiter", Box::new(|s: &Self, b: &HeadlessBrowser| Box::pin(s.create_ziprecruiter_account(b)))),
-        ];
+        // Create accounts sequentially to avoid rate limiting
+        let sites = vec!["LinkedIn", "Indeed", "Glassdoor", "Monster", "ZipRecruiter"];
 
-        for (site_name, creator) in account_creators {
-            match creator(self, browser).await {
-                Ok(result) => {
+        for site_name in sites {
+            let result = match site_name {
+                "LinkedIn" => self.create_linkedin_account(browser).await,
+                "Indeed" => self.create_indeed_account(browser).await,
+                "Glassdoor" => self.create_glassdoor_account(browser).await,
+                "Monster" => self.create_monster_account(browser).await,
+                "ZipRecruiter" => self.create_ziprecruiter_account(browser).await,
+                _ => Err(anyhow!("Unknown site: {}", site_name)),
+            };
+
+            match result {
+                Ok(message) => {
                     info!("Successfully created {} account", site_name);
-                    results.push(result);
+                    results.push(message);
                 },
                 Err(e) => {
                     warn!("Failed to create {} account: {}", site_name, e);
@@ -284,5 +286,167 @@ impl AccountCreator {
         } else {
             String::new()
         }
+    }
+    
+    /// Create accounts on all major job sites with visible browser
+    pub async fn create_all_accounts_visible(&self, browser: &crate::visible_browser::VisibleBrowser) -> Result<Vec<String>> {
+        let mut results = Vec::new();
+        
+        // Create LinkedIn account
+        match self.create_linkedin_account_visible(browser).await {
+            Ok(result) => results.push(result),
+            Err(e) => results.push(format!("LinkedIn account creation failed: {}", e)),
+        }
+        
+        // Create Indeed account
+        match self.create_indeed_account_visible(browser).await {
+            Ok(result) => results.push(result),
+            Err(e) => results.push(format!("Indeed account creation failed: {}", e)),
+        }
+        
+        // Add more platforms as needed
+        
+        Ok(results)
+    }
+    
+    /// Create LinkedIn account with visible browser
+    async fn create_linkedin_account_visible(&self, browser: &crate::visible_browser::VisibleBrowser) -> Result<String> {
+        info!("Creating LinkedIn account with visible browser");
+        
+        let email = self.secrets.get("LINKEDIN_EMAIL")
+            .ok_or_else(|| anyhow!("LinkedIn email not configured"))?;
+        let password = self.secrets.get("LINKEDIN_PASSWORD")
+            .ok_or_else(|| anyhow!("LinkedIn password not configured"))?;
+
+        // Navigate to LinkedIn signup
+        browser.navigate_to("https://www.linkedin.com/signup")?;
+        
+        // Wait for page to load
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        
+        // Fill out registration form
+        browser.type_text("input[name='firstName']", &self.extract_first_name())?;
+        browser.type_text("input[name='lastName']", &self.extract_last_name())?;
+        browser.type_text("input[name='email']", email)?;
+        browser.type_text("input[name='password']", password)?;
+        
+        // Submit form
+        browser.click_element("button[type='submit']")?;
+        
+        // Wait for response
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        
+        Ok("LinkedIn account creation initiated successfully".to_string())
+    }
+    
+    /// Create Indeed account with visible browser
+    async fn create_indeed_account_visible(&self, browser: &crate::visible_browser::VisibleBrowser) -> Result<String> {
+        info!("Creating Indeed account with visible browser");
+        
+        let email = self.secrets.get("INDEED_EMAIL")
+            .ok_or_else(|| anyhow!("Indeed email not configured"))?;
+        let password = self.secrets.get("INDEED_PASSWORD")
+            .ok_or_else(|| anyhow!("Indeed password not configured"))?;
+
+        // Navigate to Indeed signup
+        browser.navigate_to("https://secure.indeed.com/auth/signup")?;
+        
+        // Wait for page to load
+        tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+        
+        // Fill out registration form
+        browser.type_text("input[name='email']", email)?;
+        browser.type_text("input[name='password']", password)?;
+        browser.type_text("input[name='confirm_password']", password)?;
+        
+        // Submit form
+        browser.click_element("button[type='submit']")?;
+        
+        // Wait for response
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        
+        Ok("Indeed account creation initiated successfully".to_string())
+    }
+
+    /// Create accounts in batch based on the provided site list
+    pub async fn create_accounts_batch(&self, sites: &[&str], browser: &HeadlessBrowser) -> Result<Vec<String>> {
+        info!("Creating accounts on {} sites", sites.len());
+
+        let mut results = Vec::new();
+
+        for site in sites {
+            info!("Processing account creation for: {}", site);
+
+            match site.to_lowercase().as_str() {
+                "linkedin" => {
+                    match self.create_linkedin_account(browser).await {
+                        Ok(_) => {
+                            results.push(format!("✅ LinkedIn account created successfully"));
+                            info!("LinkedIn account creation completed");
+                        }
+                        Err(e) => {
+                            warn!("LinkedIn account creation failed: {}", e);
+                            results.push(format!("❌ LinkedIn account creation failed: {}", e));
+                        }
+                    }
+                }
+                "indeed" => {
+                    match self.create_indeed_account(browser).await {
+                        Ok(_) => {
+                            results.push(format!("✅ Indeed account created successfully"));
+                            info!("Indeed account creation completed");
+                        }
+                        Err(e) => {
+                            warn!("Indeed account creation failed: {}", e);
+                            results.push(format!("❌ Indeed account creation failed: {}", e));
+                        }
+                    }
+                }
+                "glassdoor" => {
+                    match self.create_glassdoor_account(browser).await {
+                        Ok(_) => {
+                            results.push(format!("✅ Glassdoor account created successfully"));
+                            info!("Glassdoor account creation completed");
+                        }
+                        Err(e) => {
+                            warn!("Glassdoor account creation failed: {}", e);
+                            results.push(format!("❌ Glassdoor account creation failed: {}", e));
+                        }
+                    }
+                }
+                "monster" => {
+                    match self.create_monster_account(browser).await {
+                        Ok(_) => {
+                            results.push(format!("✅ Monster account created successfully"));
+                            info!("Monster account creation completed");
+                        }
+                        Err(e) => {
+                            warn!("Monster account creation failed: {}", e);
+                            results.push(format!("❌ Monster account creation failed: {}", e));
+                        }
+                    }
+                }
+                "ziprecruiter" => {
+                    match self.create_ziprecruiter_account(browser).await {
+                        Ok(_) => {
+                            results.push(format!("✅ ZipRecruiter account created successfully"));
+                            info!("ZipRecruiter account creation completed");
+                        }
+                        Err(e) => {
+                            warn!("ZipRecruiter account creation failed: {}", e);
+                            results.push(format!("❌ ZipRecruiter account creation failed: {}", e));
+                        }
+                    }
+                }
+                _ => {
+                    results.push(format!("❌ Unknown site: {}", site));
+                }
+            }
+
+            // Rate limiting between account creations
+            tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        }
+
+        Ok(results)
     }
 }

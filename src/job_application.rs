@@ -1,17 +1,12 @@
+use anyhow::{Result, anyhow, Context};
+use tracing::{info, error, debug};
 use std::sync::{Arc, Mutex};
+use crate::config::Config;
 use crate::application_state::ApplicationState;
-use anyhow::{Result, Context};
-use serde::{Deserialize, Serialize};
+use crate::document_profile::DocumentProfile;
+use crate::headless_browser::HeadlessBrowser;
 use crate::nike_career::apply_nike_job;
 use crate::company_career::apply_company_job;
-use crate::document_profile::DocumentProfile;
-use tracing::{info, error, debug, warn};
-
-#[cfg(feature = "headless-chrome")]
-use crate::headless_browser::HeadlessBrowser;
-
-#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
-use crate::mock_browser::HeadlessBrowser;
 
 /// Processes a batch of job URLs and applies to matching jobs
 pub async fn process_and_apply_to_jobs(
@@ -160,7 +155,7 @@ async fn apply_linkedin_job(
         }
     }
     
-    Err(anyhow::anyhow!("No apply button found on LinkedIn job page"))
+    Err(anyhow!("No apply button found on LinkedIn job page"))
 }
 
 async fn fill_linkedin_application(

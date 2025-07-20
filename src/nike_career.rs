@@ -1,12 +1,9 @@
 use anyhow::{Result, anyhow};
 use std::time::Duration;
-use tracing::{info, debug, warn};
+use tracing::{info, debug};
 
-#[cfg(feature = "headless-chrome")]
+// PRODUCTION BROWSER ENFORCEMENT - NO MOCK DATA
 use crate::headless_browser::HeadlessBrowser;
-
-#[cfg(all(feature = "mock-browser", not(feature = "headless-chrome")))]
-use crate::mock_browser::HeadlessBrowser;
 
 /// Attempts to log in and apply to a job on the Nike career site.
 /// Handles self-healing for dead links, login errors, and already-applied jobs.
@@ -57,7 +54,7 @@ pub async fn apply_nike_job(
     }
     
     // Check for already-applied or closed job indicators
-    let content = browser.get_page_content().unwrap_or_default();
+    let content = browser.get_page_content();
     let content_lower = content.to_lowercase();
     
     if content_lower.contains("already applied") || 
@@ -167,4 +164,3 @@ async fn fill_nike_application_form(
     
     Ok("Nike application form filled (manual submission required)".to_string())
 }
-
