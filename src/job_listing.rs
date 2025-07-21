@@ -8,6 +8,8 @@ pub struct JobListing {
     pub description: String,
     pub url: String,
     pub salary: Option<String>,
-    pub date_posted: Option<chrono::NaiveDateTime>,
+    pub date_posted: String,
+    pub job_type: String,
+    pub experience_level: String,
+    pub application_method: String,
 }
-

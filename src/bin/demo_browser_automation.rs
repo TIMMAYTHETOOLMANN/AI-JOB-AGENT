@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     println!();
 
     // Initialize the visible browser
-    let browser = VisibleBrowser::new()?;
+    let mut browser = VisibleBrowser::new()?;
     
     // Demonstrate different job site automations
     println!("🎯 DEMONSTRATING MULTI-SITE JOB APPLICATIONS");

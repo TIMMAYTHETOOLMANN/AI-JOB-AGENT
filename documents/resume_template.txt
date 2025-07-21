@@ -1,0 +1,63 @@
+PROFESSIONAL RESUME TEMPLATE
+============================
+
+[Your Full Name]
+[Your Email Address]
+[Your Phone Number]
+[Your Location]
+
+PROFESSIONAL SUMMARY
+-------------------
+Experienced software engineer with X years of expertise in full-stack development,
+automation, and system optimization. Proven track record of delivering scalable
+solutions and driving process improvements in fast-paced environments.
+
+TECHNICAL SKILLS
+---------------
+• Programming Languages: Python, Rust, JavaScript, TypeScript, Java
+• Frameworks: React, Node.js, Django, FastAPI, Tokio
+• Databases: PostgreSQL, MongoDB, Redis
+• Cloud Platforms: AWS, Azure, Google Cloud
+• DevOps: Docker, Kubernetes, CI/CD, GitLab
+• Tools: Git, Linux, Automation, Testing
+
+PROFESSIONAL EXPERIENCE
+----------------------
+Software Engineer | Company Name | 2020-Present
+• Developed and maintained scalable web applications serving 100K+ users
+• Implemented automated testing reducing deployment time by 60%
+• Led cross-functional teams to deliver critical projects on time
+• Optimized database queries improving application performance by 40%
+
+Previous Role | Previous Company | 2018-2020
+• [Add your actual work experience here]
+• [Quantify achievements with metrics]
+• [Focus on results and impact]
+
+EDUCATION
+---------
+Bachelor of Science in Computer Science | University Name | Year
+• Relevant coursework: Data Structures, Algorithms, Software Engineering
+• GPA: X.X (if notable)
+
+CERTIFICATIONS
+-------------
+• AWS Certified Solutions Architect
+• Certified Kubernetes Administrator
+• [Add relevant certifications]
+
+PROJECTS
+--------
+Project Name | GitHub Link
+• Brief description of significant project
+• Technologies used and impact achieved
+
+LANGUAGES
+---------
+• English: Native/Fluent
+• [Other languages if applicable]
+
+=====================================
+REPLACE ALL PLACEHOLDER TEXT WITH YOUR ACTUAL INFORMATION
+SAVE AS: documents/resume.pdf (convert to PDF format)
+=====================================

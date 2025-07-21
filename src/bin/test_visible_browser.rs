@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
     println!("=================================================");
 
     // Initialize the visible browser
-    let browser = VisibleBrowser::new()?;
+    let mut browser = VisibleBrowser::new()?;
 
     println!("\n🌐 Testing Navigation and Job Application Flow");
     

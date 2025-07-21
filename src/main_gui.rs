@@ -386,33 +386,53 @@ impl ProductionGui {
     fn show_browser_panel(&mut self, ui: &mut egui::Ui) {
         ui.heading("🌐 Browser Control - PRODUCTION");
 
-        if let Some(ref browser) = self.browser {
+        // Store browser state in local variables to avoid borrowing conflicts
+        let browser_connected = self.browser.is_some();
+        let current_url = if let Some(ref browser) = self.browser {
+            browser.get_current_url()
+        } else {
+            String::from("Not connected")
+        };
+
+        if browser_connected {
             ui.label("Browser Status: Connected");
-            ui.label(format!("Current URL: {}", browser.get_current_url()));
+            ui.label(format!("Current URL: {}", current_url));
 
             ui.separator();
 
-            ui.horizontal(|ui| {
-                if ui.button("📸 Screenshot").clicked() {
-                    let filename = format!("screenshot_{}.html", chrono::Local::now().format("%Y%m%d_%H%M%S"));
-                    if let Err(e) = browser.screenshot(&filename) {
-                        self.add_log("Browser", "ERROR", &format!("Screenshot failed: {}", e));
-                    } else {
-                        self.add_log("Browser", "INFO", &format!("Screenshot saved: {}", filename));
+            // Use local variables to track button clicks
+            let screenshot_clicked = ui.button("📸 Screenshot").clicked();
+            let refresh_clicked = ui.button("🔄 Refresh").clicked();
+            let pause_clicked = ui.button("⏸ Pause").clicked();
+
+            // Handle button actions after the UI code
+            if screenshot_clicked {
+                let filename = format!("screenshot_{}.html", chrono::Local::now().format("%Y%m%d_%H%M%S"));
+                
+                // Now we can safely mutably borrow self.browser
+                if let Some(ref mut browser) = self.browser {
+                    match browser.screenshot(&filename) {
+                        Ok(_) => self.add_log("Browser", "INFO", &format!("Screenshot saved: {}", filename)),
+                        Err(e) => self.add_log("Browser", "ERROR", &format!("Screenshot failed: {}", e)),
                     }
                 }
+            }
 
-                if ui.button("🔄 Refresh").clicked() {
-                    self.add_log("Browser", "INFO", "Browser refresh requested");
-                }
+            if refresh_clicked {
+                self.add_log("Browser", "INFO", "Browser refresh requested");
+            }
 
-                if ui.button("⏸ Pause").clicked() {
-                    self.add_log("Browser", "INFO", "Browser paused");
-                }
-            });
+            if pause_clicked {
+                self.add_log("Browser", "INFO", "Browser paused");
+            }
         } else {
             ui.label("Browser Status: Disconnected");
-            if ui.button("🔌 Connect Browser").clicked() {
+            
+            // Use local variable to track button click
+            let connect_clicked = ui.button("🔌 Connect Browser").clicked();
+            
+            // Handle button action after the UI code
+            if connect_clicked {
                 match VisibleBrowser::new() {
                     Ok(browser) => {
                         self.browser = Some(browser);
