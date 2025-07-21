@@ -71,6 +71,14 @@ name = "autonomous_job_agent"
 path = "src/main.rs"
 
 [[bin]]
+name = "standalone_demo"
+path = "src/bin/standalone_demo.rs"
+
+[[bin]]
+name = "optimization_demo"
+path = "src/bin/optimization_demo.rs"
+
+[[bin]]
 name = "production_gui"
 path = "src/bin/production_gui.rs"
 
