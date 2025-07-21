@@ -1,22 +1,40 @@
 @echo off
 :: ========================================================
-:: PRODUCTION DEPLOYMENT SCRIPT - WINDOWS
+:: JARVIS 2.0 - PRODUCTION DEPLOYMENT SCRIPT
+:: SINGLE WINDOW REAL-WORLD AUTOMATION ONLY
 :: ========================================================
 
-echo 🚀 AI Job Agent - Production Deployment System
-echo ==============================================
+echo 🤖 JARVIS 2.0 - MONOLITH CORE DEPLOYMENT
+echo =============================================
+echo NO MOCK DATA - PRODUCTION READY ONLY
 
-:: Create necessary directories
+:: Validate environment
+echo 🔍 Validating production environment...
+if not exist "AgentConfig.toml" (
+    echo ❌ ERROR: AgentConfig.toml not found
+    echo Please create AgentConfig.toml with real configuration
+    pause
+    exit /b 1
+)
+
+:: Check for required files
+if not exist "resume.pdf" (
+    echo ⚠️  WARNING: resume.pdf not found - update AgentConfig.toml with correct path
+)
+
+if not exist "cover_letter.pdf" (
+    echo ⚠️  WARNING: cover_letter.pdf not found - update AgentConfig.toml with correct path
+)
+
+:: Create production directories
 echo 📁 Creating production directories...
 if not exist "state" mkdir state
 if not exist "logs" mkdir logs
 if not exist "screenshots" mkdir screenshots
-if not exist "config" mkdir config
-if not exist "data" mkdir data
 
-:: Build all production binaries
-echo 🔨 Building production binaries...
-cargo build --release --features production-gui,web-server,visible-chrome
+:: Build PRODUCTION binary ONLY
+echo 🔨 Building JARVIS 2.0 monolith core...
+cargo build --release --features visible-chrome
 
 if %ERRORLEVEL% neq 0 (
     echo ❌ Build failed! Check compilation errors.
@@ -24,44 +42,61 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-echo ✅ Build completed successfully!
+echo ✅ JARVIS 2.0 build completed successfully!
 
-:: Create desktop shortcuts
-echo 🖥️ Creating desktop shortcuts...
-echo @echo off > start_gui.bat
-echo echo 🎮 Starting AI Job Agent GUI... >> start_gui.bat
-echo .\target\release\autonomous_job_agent.exe --gui >> start_gui.bat
-echo pause >> start_gui.bat
+:: Create production startup script
+echo 🚀 Creating production startup script...
+echo @echo off > start_jarvis.bat
+echo echo 🤖 JARVIS 2.0 - MONOLITH CORE STARTING... >> start_jarvis.bat
+echo echo Single window automation - NO MOCK DATA >> start_jarvis.bat
+echo echo Controls: Ctrl+P (Pause) ^| Ctrl+R (Resume) ^| Ctrl+Q (Quit) >> start_jarvis.bat
+echo echo. >> start_jarvis.bat
+echo .\target\release\autonomous_job_agent.exe >> start_jarvis.bat
+echo pause >> start_jarvis.bat
 
-echo @echo off > start_web.bat
-echo echo 🌐 Starting AI Job Agent Web Server... >> start_web.bat
-echo echo Dashboard: http://localhost:8080 >> start_web.bat
-echo .\target\release\autonomous_job_agent.exe --web >> start_web.bat
-echo pause >> start_web.bat
+:: Create environment setup helper
+echo 📝 Creating environment setup helper...
+echo @echo off > setup_environment.bat
+echo echo 🔧 JARVIS 2.0 - Environment Setup >> setup_environment.bat
+echo echo. >> setup_environment.bat
+echo echo Please set the following environment variables: >> setup_environment.bat
+echo echo. >> setup_environment.bat
+echo echo Required: >> setup_environment.bat
+echo echo   set AGENT_NAME="Your Full Name" >> setup_environment.bat
+echo echo   set AGENT_EMAIL="your.email@example.com" >> setup_environment.bat
+echo echo   set RESUME_PATH="C:\path\to\your\resume.pdf" >> setup_environment.bat
+echo echo   set COVER_LETTER_PATH="C:\path\to\your\cover_letter.pdf" >> setup_environment.bat
+echo echo. >> setup_environment.bat
+echo echo Optional (for account creation): >> setup_environment.bat
+echo echo   set LINKEDIN_EMAIL="your.linkedin@email.com" >> setup_environment.bat
+echo echo   set LINKEDIN_PASSWORD="your_password" >> setup_environment.bat
+echo echo   set INDEED_EMAIL="your.indeed@email.com" >> setup_environment.bat
+echo echo   set INDEED_PASSWORD="your_password" >> setup_environment.bat
+echo echo. >> setup_environment.bat
+echo pause >> setup_environment.bat
 
-echo @echo off > start_hybrid.bat
-echo echo 🚀 Starting AI Job Agent Hybrid Mode... >> start_hybrid.bat
-echo echo GUI + Web + CLI automation active >> start_hybrid.bat
-echo .\target\release\autonomous_job_agent.exe >> start_hybrid.bat
-echo pause >> start_hybrid.bat
-
 echo.
-echo 🎯 Production system ready! Deployment options:
+echo 🎯 JARVIS 2.0 DEPLOYMENT COMPLETE!
 echo.
-echo 1. 🎮 GUI Mode:     Double-click start_gui.bat
-echo 2. 🌐 Web Mode:     Double-click start_web.bat
-echo 3. 🚀 Hybrid Mode:  Double-click start_hybrid.bat
-echo 4. ⚡ CLI Mode:     .\target\release\autonomous_job_agent.exe --cli
+echo 📋 PRODUCTION CHECKLIST:
+echo   1. ✅ Binary compiled successfully
+echo   2. 📝 Update AgentConfig.toml with your real information
+echo   3. 📄 Place your resume.pdf and cover_letter.pdf files
+echo   4. 🔧 Run setup_environment.bat to configure credentials
+echo   5. 🚀 Run start_jarvis.bat to begin automation
 echo.
-echo 📋 Direct executables:
-echo    • GUI Only:      .\target\release\production_gui.exe
-echo    • Web Only:      .\target\release\web_server.exe
-echo    • Main App:      .\target\release\autonomous_job_agent.exe
+echo 🎮 OPERATION MODES:
+echo   • Single Window: Visual browser automation
+echo   • Real-Time Monitoring: Console + log files
+echo   • Manual Intervention: Pause for login/MFA
+echo   • Rate Limited: Respectful job board interaction
 echo.
-echo 🔧 Configuration:
-echo    • Edit AgentConfig.toml for settings
-echo    • Copy AgentSecrets.template to .env and add credentials
+echo ⚠️  PRODUCTION REQUIREMENTS:
+echo   • Display environment (Windows desktop)
+echo   • Real resume and cover letter files
+echo   • Valid email addresses and credentials
+echo   • NO MOCK DATA - Real job applications only
 echo.
-echo ✅ Production deployment complete!
+echo 🚀 Ready to deploy: start_jarvis.bat
 echo.
 pause

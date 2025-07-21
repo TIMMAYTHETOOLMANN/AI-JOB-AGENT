@@ -14,13 +14,13 @@ pub mod adaptive_browser;
 pub mod main_gui;
 pub mod job_filter;
 pub mod reporting;
-pub mod visible_browser;
-pub mod web_server;
 pub mod account_creator;
 
-// Production browser implementation - always available
-pub mod headless_browser;
+// PRODUCTION BROWSER - SINGLE VISIBLE WINDOW ONLY
+pub mod visible_browser;
 
-// Optional mock browser for testing
-#[cfg(feature = "mock-browser")]
-pub mod mock_browser;
+// WEB SERVER FOR API ACCESS (Optional)
+pub mod web_server;
+
+// REMOVE ALL MOCK/HEADLESS DEPENDENCIES
+// Production builds ONLY use visible_browser with real automation

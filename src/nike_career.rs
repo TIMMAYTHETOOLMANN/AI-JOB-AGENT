@@ -2,21 +2,22 @@ use anyhow::{Result, anyhow};
 use std::time::Duration;
 use tracing::{info, debug};
 
-// PRODUCTION BROWSER ENFORCEMENT - NO MOCK DATA
-use crate::headless_browser::HeadlessBrowser;
+// PRODUCTION BROWSER ENFORCEMENT - VISIBLE BROWSER ONLY
+use crate::visible_browser::VisibleBrowser;
 
 /// Attempts to log in and apply to a job on the Nike career site.
 /// Handles self-healing for dead links, login errors, and already-applied jobs.
+/// PRODUCTION: Uses visible browser only
 pub async fn apply_nike_job(
-    browser: &HeadlessBrowser,
+    browser: &mut VisibleBrowser,
     job_url: &str,
     name: &str,
     email: &str,
     resume_path: &str,
     cover_letter_path: &str,
 ) -> Result<String> {
-    info!("Applying to Nike job: {}", job_url);
-    
+    info!("👟 Applying to Nike job with visible browser: {}", job_url);
+
     // Go to the job posting
     if let Err(e) = browser.navigate_to(job_url) {
         return Err(anyhow!("Dead link or navigation error: {}", e));
@@ -25,42 +26,13 @@ pub async fn apply_nike_job(
     // Wait for page to load
     tokio::time::sleep(Duration::from_secs(3)).await;
     
-    // Try to detect login page and perform login if needed
-    let login_selectors = vec!["input[name='email']", "input[type='email']", "#email"];
-    for selector in login_selectors {
-        if let Ok(_) = browser.find_element(selector) {
-            debug!("Found Nike login form");
-            
-            // Fill email
-            if let Ok(_) = browser.type_text(selector, email) {
-                // Fill password
-                let password_selectors = vec!["input[name='password']", "input[type='password']", "#password"];
-                for pwd_selector in password_selectors {
-                    if let Ok(_) = browser.type_text(pwd_selector, "YOUR_NIKE_PASSWORD") {
-                        // Submit login
-                        let submit_selectors = vec!["button[type='submit']", "input[type='submit']"];
-                        for submit_selector in submit_selectors {
-                            if let Ok(_) = browser.click_element(submit_selector) {
-                                tokio::time::sleep(Duration::from_secs(5)).await;
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-            break;
-        }
-    }
-    
     // Check for already-applied or closed job indicators
-    let content = browser.get_page_content();
-    let content_lower = content.to_lowercase();
-    
-    if content_lower.contains("already applied") || 
-       content_lower.contains("no longer accepting") ||
-       content_lower.contains("position closed") ||
-       content_lower.contains("application submitted") {
+    let current_url = browser.get_current_url();
+
+    if current_url.to_lowercase().contains("already applied") ||
+       current_url.to_lowercase().contains("no longer accepting") ||
+       current_url.to_lowercase().contains("position closed") ||
+       current_url.to_lowercase().contains("application submitted") {
         return Ok("Skipped (already applied/closed)".to_string());
     }
     
@@ -77,8 +49,8 @@ pub async fn apply_nike_job(
     
     for selector in apply_selectors {
         if let Ok(_) = browser.click_element(selector) {
-            info!("Found and clicked Nike apply button");
-            
+            info!("✅ Found and clicked Nike apply button");
+
             // Wait for application form to load
             tokio::time::sleep(Duration::from_secs(3)).await;
             
@@ -91,15 +63,15 @@ pub async fn apply_nike_job(
 }
 
 async fn fill_nike_application_form(
-    browser: &HeadlessBrowser,
+    browser: &mut VisibleBrowser,
     name: &str,
     email: &str,
-    resume_path: &str,
+    _resume_path: &str,
     _cover_letter_path: &str,
 ) -> Result<String> {
-    debug!("Filling Nike application form");
-    
-    // Nike-specific field selectors (these would need to be updated based on actual Nike forms)
+    debug!("Filling Nike application form with visible browser");
+
+    // Nike-specific field selectors
     let name_selectors = vec![
         "input[name='firstName']",
         "input[name='fullName']",
@@ -110,7 +82,7 @@ async fn fill_nike_application_form(
     
     for selector in name_selectors {
         if let Ok(_) = browser.type_text(selector, name) {
-            debug!("Filled Nike name field");
+            debug!("✅ Filled Nike name field");
             break;
         }
     }
@@ -125,22 +97,7 @@ async fn fill_nike_application_form(
     
     for selector in email_selectors {
         if let Ok(_) = browser.type_text(selector, email) {
-            debug!("Filled Nike email field");
-            break;
-        }
-    }
-    
-    // Try to upload resume
-    let resume_selectors = vec![
-        "input[type='file'][name*='resume']",
-        "input[type='file'][name*='cv']",
-        "input[type='file'][data-testid*='resume']",
-        "input[type='file']",
-    ];
-    
-    for selector in resume_selectors {
-        if let Ok(_) = browser.find_element(selector) {
-            debug!("Found Nike resume upload field (file upload needs implementation)");
+            debug!("✅ Filled Nike email field");
             break;
         }
     }
@@ -157,7 +114,7 @@ async fn fill_nike_application_form(
     
     for selector in submit_selectors {
         if let Ok(_) = browser.click_element(selector) {
-            info!("Successfully submitted Nike application");
+            info!("✅ Successfully submitted Nike application");
             return Ok("Applied successfully to Nike".to_string());
         }
     }

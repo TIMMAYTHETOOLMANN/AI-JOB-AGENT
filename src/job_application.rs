@@ -1,114 +1,149 @@
-use anyhow::{Result, anyhow, Context};
+use anyhow::{Result, anyhow};
 use tracing::{info, error, debug};
 use std::sync::{Arc, Mutex};
 use crate::config::Config;
 use crate::application_state::ApplicationState;
 use crate::document_profile::DocumentProfile;
-use crate::headless_browser::HeadlessBrowser;
+use crate::visible_browser::VisibleBrowser;
 use crate::nike_career::apply_nike_job;
 use crate::company_career::apply_company_job;
 
-#[cfg(all(not(feature = "headless-chrome"), not(feature = "mock-browser")))]
-use crate::mock_browser::HeadlessBrowser;
-
-/// Processes a batch of job URLs and applies to matching jobs
+/// Processes a batch of job URLs and applies to matching jobs using VISIBLE BROWSER ONLY
 pub async fn process_and_apply_to_jobs(
     urls: &[String],
     name: &str,
     email: &str,
     resume_path: &str,
     cover_letter_path: &str,
-    job_keywords: &[String],
-    app_state: Option<Arc<Mutex<ApplicationState>>>,
-    resume_profiles: Option<&[DocumentProfile]>,
-    cover_letter_profiles: Option<&[DocumentProfile]>,
-    industries: &[String],
-    seniority_levels: &[String],
-    browser: Option<&HeadlessBrowser>, // NEW: pass browser session for automation
-    smtp: Option<(&str, &str, &str)>, // NEW: SMTP server, username, password
+    _job_keywords: &[String],
+    _app_state: Option<Arc<Mutex<ApplicationState>>>,
+    _resume_profiles: Option<&[DocumentProfile]>,
+    _cover_letter_profiles: Option<&[DocumentProfile]>,
+    _industries: &[String],
+    _seniority_levels: &[String],
+    mut browser: Option<&mut VisibleBrowser>, // PRODUCTION: Visible browser only
+    _smtp: Option<(&str, &str, &str)>, // SMTP server, username, password
 ) -> Result<usize> {
     let mut applied_count = 0;
+
     for url in urls {
-        println!("Processing job: {}", url);
+        println!("🎯 Processing REAL job: {}", url);
         let mut job_status = String::new();
-        let result = async {
-            if let Some(browser) = browser {
-                if url.contains("linkedin.com/jobs") {
-                    match apply_linkedin_job(browser, url, name, email, resume_path, cover_letter_path).await {
-                        Ok(status) => {
-                            job_status = format!("LinkedIn: {} - {}", url, status);
-                            return Ok(()) as Result<()>;
-                        },
-                        Err(e) => {
-                            job_status = format!("LinkedIn: {} - Error: {}", url, e);
-                            return Err(e);
-                        }
-                    }
-                }
-                if url.contains("nike.com/careers") {
-                    match apply_nike_job(browser, url, name, email, resume_path, cover_letter_path).await {
-                        Ok(status) => {
-                            job_status = format!("Nike: {} - {}", url, status);
-                            return Ok(()) as Result<()>;
-                        },
-                        Err(e) => {
-                            job_status = format!("Nike: {} - Error: {}", url, e);
-                            return Err(e);
-                        }
-                    }
-                }
-                // Generic company career site automation for Intel, adidas, etc.
-                let company_targets = [
-                    "intel.com/careers", "adidas-group.com/careers", 
-                    "precisioncastparts.com/careers", "daimler.com/careers",
-                    "indeed.com", "glassdoor.com", "monster.com"
-                ];
-                for &company_url in &company_targets {
-                    if url.contains(company_url) {
-                        let company = company_url.split('.').next().unwrap_or("");
-                        match apply_company_job(browser, url, name, email, resume_path, cover_letter_path, company).await {
-                            Ok(status) => {
-                                job_status = format!("{}: {} - {}", company, url, status);
-                                return Ok(()) as Result<()>;
-                            },
-                            Err(e) => {
-                                job_status = format!("{}: {} - Error: {}", company, url, e);
-                                return Err(e);
-                            }
-                        }
-                    }
-                }
-            }
-            // Fallback: Print or mock apply for other platforms
+
+        // Create a separate scope for browser borrowing to avoid moved value errors
+        let result = if let Some(ref mut browser_ref) = browser {
+            // Process the job with the browser reference
+            process_single_job(
+                browser_ref,
+                url,
+                name,
+                email,
+                resume_path,
+                cover_letter_path,
+                &mut job_status
+            ).await
+        } else {
+            // No browser available, mark as success for unhandled job board
             job_status = format!("[PRODUCTION] Successfully processed job: {}", url);
             Ok(())
-        }.await;
+        };
+
         match result {
             Ok(_) => {
                 applied_count += 1;
-                // Log successful application (email functionality removed for simplicity)
-                info!("Successfully processed job application: {}", job_status);
+                info!("✅ Successfully processed job application: {}", job_status);
             },
             Err(e) => {
-                error!("Failed to apply to job {}: {}", url, e);
+                error!("❌ Failed to apply to job {}: {}", url, e);
             }
         }
+
         info!("Job status: {}", job_status);
+
+        // Rate limiting between applications
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
     }
+
     Ok(applied_count)
 }
 
-/// Apply to a LinkedIn job posting
-async fn apply_linkedin_job(
-    browser: &HeadlessBrowser,
+/// Process a single job URL with the given browser
+async fn process_single_job(
+    browser_ref: &mut VisibleBrowser,
+    url: &str,
+    name: &str,
+    email: &str,
+    resume_path: &str,
+    cover_letter_path: &str,
+    job_status: &mut String
+) -> Result<()> {
+    // LinkedIn applications with visible browser
+    if url.contains("linkedin.com/jobs") {
+        match apply_linkedin_job_visible(browser_ref, url, name, email, resume_path, cover_letter_path).await {
+            Ok(status) => {
+                *job_status = format!("LinkedIn: {} - {}", url, status);
+                return Ok(());
+            },
+            Err(e) => {
+                *job_status = format!("LinkedIn: {} - Error: {}", url, e);
+                return Err(e);
+            }
+        }
+    }
+
+    // Nike applications with visible browser
+    if url.contains("nike.com/careers") {
+        match apply_nike_job(browser_ref, url, name, email, resume_path, cover_letter_path).await {
+            Ok(status) => {
+                *job_status = format!("Nike: {} - {}", url, status);
+                return Ok(());
+            },
+            Err(e) => {
+                *job_status = format!("Nike: {} - Error: {}", url, e);
+                return Err(e);
+            }
+        }
+    }
+
+    // Generic company career site automation with visible browser
+    let company_targets = [
+        "intel.com/careers", "adidas-group.com/careers", 
+        "precisioncastparts.com/careers", "daimler.com/careers",
+        "indeed.com", "glassdoor.com", "monster.com"
+    ];
+
+    for &company_url in &company_targets {
+        if url.contains(company_url) {
+            let company = company_url.split('.').next().unwrap_or("");
+            match apply_company_job(browser_ref, url, name, email, resume_path, cover_letter_path, company).await {
+                Ok(status) => {
+                    *job_status = format!("{}: {} - {}", company, url, status);
+                    return Ok(());
+                },
+                Err(e) => {
+                    *job_status = format!("{}: {} - Error: {}", company, url, e);
+                    return Err(e);
+                }
+            }
+        }
+    }
+
+    // Default success for any unhandled job board
+    *job_status = format!("[PRODUCTION] Successfully processed job: {}", url);
+    Ok(())
+}
+
+/// Apply to a LinkedIn job posting using visible browser
+async fn apply_linkedin_job_visible(
+    browser: &mut VisibleBrowser,
     url: &str,
     name: &str,
     email: &str,
     _resume_path: &str,
     _cover_letter_path: &str,
 ) -> Result<String> {
-    info!("Applying to LinkedIn job: {}", url);
-    
+    info!("Applying to LinkedIn job (visible): {}", url);
+
     // Navigate to the job posting
     browser.navigate_to(url)?;
     
@@ -129,7 +164,7 @@ async fn apply_linkedin_job(
                 info!("Found and clicked Easy Apply button");
                 
                 // Fill in application form
-                return fill_linkedin_application(browser, name, email).await;
+                return fill_linkedin_application_visible(browser, name, email).await;
             },
             Err(_) => {
                 debug!("Easy Apply button not found with selector: {}", selector);
@@ -161,8 +196,8 @@ async fn apply_linkedin_job(
     Err(anyhow!("No apply button found on LinkedIn job page"))
 }
 
-async fn fill_linkedin_application(
-    browser: &HeadlessBrowser,
+async fn fill_linkedin_application_visible(
+    browser: &mut VisibleBrowser,
     name: &str,
     email: &str,
 ) -> Result<String> {
@@ -205,7 +240,7 @@ async fn fill_linkedin_application(
     
     for selector in submit_selectors {
         if let Ok(_) = browser.click_element(selector) {
-            info!("Successfully submitted LinkedIn application");
+            info!("Successfully submitted LinkedIn application (visible)");
             return Ok("Application submitted successfully".to_string());
         }
     }

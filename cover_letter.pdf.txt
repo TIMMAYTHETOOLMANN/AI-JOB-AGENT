@@ -1,0 +1,9 @@
+This is a placeholder file.
+
+Please replace this with your actual cover_letter.pdf file.
+The file should be in PDF format and contain your professional cover letter.
+
+The path to this file is configured in AgentConfig.toml as:
+cover_letter_path = "cover_letter.pdf"
+
+You can also update the path in AgentConfig.toml if you want to store your cover letter in a different location.

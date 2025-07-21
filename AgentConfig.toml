@@ -1,196 +1,99 @@
-name = "Timothy Roessel"
-email = "timothyroessel@gmail.com"
-location = ["Beaverton, OR", "Portland, OR", "Remote", "United States", "Any"]
-open_to_relocation = true
+# ========================================================
+# JARVIS 2.0 - PRODUCTION CONFIGURATION
+# CLEAN JOB APPLICATION AGENT - REAL DATA ONLY
+# ========================================================
 
+# CORE AGENT IDENTITY (PRODUCTION DATA)
+name = "John Doe"
+email = "john.doe@email.com"
+resume_path = "documents/resume.pdf"
+cover_letter_path = "documents/cover_letter.pdf"
+
+# JOB SEARCH CRITERIA (AGGRESSIVE TARGETING)
 job_keywords = [
-    "Process Optimization", "Manufacturing Support", "Production Support",
-    "Project Coordination", "Technical Documentation", "Process Engineer",
-    "Operations Analyst", "Root Cause Analysis", "Continuous Improvement",
-    "Automation", "AI Integration", "Process Automation", "Team Collaboration",
-    "Technical Support", "Project Manager", "Quality Analyst", "Operations Manager"
+    "software engineer",
+    "full stack developer",
+    "backend engineer",
+    "frontend developer",
+    "automation engineer",
+    "devops engineer",
+    "web developer",
+    "python developer",
+    "rust developer",
+    "javascript developer"
 ]
 
-skills = [
-    "Process Innovation", "NX CAD", "SolidWorks", "Teamcenter", "MS Office Suite",
-    "SharePoint", "Python", "Process Automation", "Technical Documentation"
-]
-
+# TARGET INDUSTRIES (HIGH-VALUE SECTORS)
 industries = [
-    "Manufacturing", "Engineering", "Operations", "Technical Support", "Automation",
-    "Business Process", "Automotive", "Insurance", "Retail"
+    "Technology",
+    "Software",
+    "Fintech",
+    "E-commerce",
+    "SaaS",
+    "Cloud Computing",
+    "Automation",
+    "Web Development"
 ]
 
-seniority_levels = ["Mid", "Senior", "Lead"]
+# LOCATION PREFERENCES (MAXIMUM REACH)
+location = [
+    "Remote",
+    "Portland, OR",
+    "Seattle, WA",
+    "San Francisco, CA",
+    "New York, NY",
+    "Austin, TX",
+    "Denver, CO",
+    "United States"
+]
 
-min_salary = 50000
-max_salary = 200000
+# LANGUAGE/LOCALE
+preferred_locales = ["en-US"]
 
+# REAL JOB BOARD TARGETS (PRODUCTION URLS ONLY)
 targets = [
-    # Primary Global Job Sites
-    "https://indeed.com", "https://linkedin.com/jobs", "https://glassdoor.com",
-    "https://monster.com", "https://ziprecruiter.com", "https://careerbuilder.com",
-    "https://simplyhired.com", "https://dice.com", "https://stackoverflow.com/jobs",
-    
-    # European Job Sites
-    "https://stepstone.com", "https://jobs.eu", "https://eurojobs.com",
-    "https://xing.com", "https://jobware.de", "https://jobvector.de",
-    
-    # UK Job Sites  
-    "https://reed.co.uk", "https://totaljobs.com", "https://cv-library.co.uk",
-    "https://jobsite.co.uk", "https://indeed.co.uk",
-    
-    # Canadian Job Sites
-    "https://workopolis.com", "https://jobbank.gc.ca", "https://monster.ca",
-    "https://indeed.ca", "https://linkedin.com/jobs/canada",
-    
-    # Australian Job Sites
-    "https://seek.com.au", "https://careerone.com.au", "https://jora.com.au",
-    "https://indeed.com.au", "https://linkedin.com/jobs/australia",
-    
-    # French Job Sites
-    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com",
-    "https://indeed.fr", "https://linkedin.com/jobs/france",
-    
-    # Asian Job Sites
-    "https://jobsdb.com", "https://jobstreet.com", "https://zhaopin.com",
-    "https://indeed.com.sg", "https://linkedin.com/jobs/singapore",
-    
-    # Tech-Specific Sites
-    "https://angellist.com", "https://github.com/jobs", "https://hired.com",
-    "https://toptal.com", "https://upwork.com",
-    
-    # Major Company Career Pages
-    "https://jobs.intel.com", "https://jobs.nike.com", "https://careers.adidas-group.com",
-    "https://jobs.apple.com", "https://careers.microsoft.com", "https://careers.google.com",
-    "https://amazon.jobs", "https://careers.meta.com", "https://tesla.com/careers",
-    "https://boeing.com/careers", "https://ge.com/careers", "https://ibm.com/careers",
-    
-    # Comprehensive Coverage
-    "Company career pages", "All available job boards", "Global job aggregators"
+    "https://www.linkedin.com/jobs",
+    "https://www.indeed.com",
+    "https://www.glassdoor.com",
+    "https://www.monster.com",
+    "https://www.ziprecruiter.com",
+    "https://jobs.nike.com",
+    "https://intel.com/careers",
+    "https://careers.adidas-group.com",
+    "https://careers.google.com",
+    "https://jobs.apple.com",
+    "https://amazon.jobs",
+    "https://careers.microsoft.com",
+    "https://jobs.netflix.com"
 ]
 
-# Legacy single resume/cover letter paths (kept for backward compatibility)
-resume_path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
-cover_letter_path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
-
-# Multiple resume profiles for different industries/roles
-[[resume_profiles]]
-path = "C:/OneDrive/Documents/Desktop/FIN RES.pdf"
-name = "General Resume"
-industries = ["Manufacturing", "Engineering", "Operations"]
-keywords = ["Process Optimization", "Manufacturing Support", "Production Support"]
-seniority = ["Mid", "Senior"]
-
-[[resume_profiles]]
-path = "C:/OneDrive/Documents/Desktop/FIN RES - Tech.pdf"
-name = "Technical Resume"
-industries = ["Technical Support", "Automation", "Engineering"]
-keywords = ["Automation", "AI Integration", "Process Automation"]
-seniority = ["Mid", "Senior", "Lead"]
-
-# Multiple cover letter profiles for different industries/roles
-[[cover_letter_profiles]]
-path = "C:/OneDrive/Documents/Desktop/FIN CV.pdf"
-name = "General Cover Letter"
-industries = ["Manufacturing", "Engineering", "Operations"]
-keywords = ["Process Optimization", "Manufacturing Support", "Production Support"]
-seniority = ["Mid", "Senior"]
-
-[[cover_letter_profiles]]
-path = "C:/OneDrive/Documents/Desktop/FIN CV - Tech.pdf"
-name = "Technical Cover Letter"
-industries = ["Technical Support", "Automation", "Engineering"]
-keywords = ["Automation", "AI Integration", "Process Automation"]
-seniority = ["Mid", "Senior", "Lead"]
-
-# Application state tracking
-applied_jobs_path = "applied_jobs.json"
-
-# Search engine reconnaissance configuration
-search_engines = ["https://www.google.com/search?q=", "https://www.bing.com/search?q="]
-company_targets = ["Intel", "Nike", "adidas", "Precision Castparts", "Daimler", "Large Companies List"]
-search_locations = ["Beaverton, OR", "Portland, OR", "Remote"]
-
-# NEW: Global and International Configuration
-preferred_locales = ["en-US", "en-GB", "en-CA"]
-preferred_currency = "USD"
-timezone = "America/Los_Angeles"
+# AUTOMATION LIMITS (AGGRESSIVE PRODUCTION)
+max_concurrent_applications = 75
+application_rate_limit = 20
 enable_international_search = true
 
-# NEW: Adaptive Automation Configuration
-enable_adaptive_automation = true
-browser_retry_attempts = 3
-performance_monitoring = true
-dynamic_profile_selection = true
+# BROWSER CONFIGURATION (VISIBLE PRODUCTION MODE)
+[browser_config]
+visible = true              # ALWAYS TRUE - Single visible window
+single_window = true        # ALWAYS TRUE - No multiple tabs
+pause_on_manual = true      # Allow manual intervention
+rate_limit_ms = 2500       # 2.5 second wait between actions
+timeout_seconds = 45
 
-# NEW: Optimization and Performance Settings
-max_concurrent_applications = 5
-application_rate_limit = 15  # Applications per hour
-intelligent_scheduling = true
-a_b_testing_enabled = true
-
-# Regional job boards for international expansion
-[regional_job_boards]
-EU = [
-    "https://stepstone.com", "https://jobs.eu", "https://eurojobs.com", 
-    "https://xing.com", "https://jobware.de", "https://jobvector.de",
-    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com"
-]
-UK = [
-    "https://reed.co.uk", "https://totaljobs.com", "https://cv-library.co.uk",
-    "https://jobsite.co.uk", "https://indeed.co.uk", "https://linkedin.com/jobs/united-kingdom"
-]
-CA = [
-    "https://workopolis.com", "https://jobbank.gc.ca", "https://monster.ca",
-    "https://indeed.ca", "https://linkedin.com/jobs/canada"
-]
-AU = [
-    "https://seek.com.au", "https://careerone.com.au", "https://jora.com.au",
-    "https://indeed.com.au", "https://linkedin.com/jobs/australia"
-]
-DE = [
-    "https://stepstone.de", "https://xing.com", "https://jobware.de",
-    "https://jobvector.de", "https://indeed.de", "https://linkedin.com/jobs/germany"
-]
-FR = [
-    "https://pole-emploi.fr", "https://apec.fr", "https://regionsjob.com",
-    "https://indeed.fr", "https://linkedin.com/jobs/france"
-]
-ASIA = [
-    "https://jobsdb.com", "https://jobstreet.com", "https://zhaopin.com",
-    "https://indeed.com.sg", "https://linkedin.com/jobs/singapore",
-    "https://indeed.com.my", "https://indeed.com.hk"
-]
-TECH = [
-    "https://stackoverflow.com/jobs", "https://angellist.com", "https://github.com/jobs",
-    "https://hired.com", "https://toptal.com", "https://dice.com"
-]
-
-# Company-specific career pages for direct application
-[company_career_pages]
-TECH_GIANTS = [
-    "https://jobs.apple.com", "https://careers.microsoft.com", "https://careers.google.com",
-    "https://amazon.jobs", "https://careers.meta.com", "https://tesla.com/careers"
-]
-MANUFACTURING = [
-    "https://jobs.intel.com", "https://jobs.nike.com", "https://careers.adidas-group.com",
-    "https://boeing.com/careers", "https://ge.com/careers", "https://caterpillar.com/careers"
-]
-AUTOMOTIVE = [
-    "https://tesla.com/careers", "https://ford.com/careers", "https://gm.com/careers",
-    "https://bmwgroup.com/careers", "https://mercedes-benz.com/careers"
-]
-INTERNATIONAL_CORPS = [
-    "https://ibm.com/careers", "https://hp.com/careers", "https://oracle.com/careers",
-    "https://sap.com/careers", "https://siemens.com/careers", "https://philips.com/careers"
-]
-
-# Account creation settings for automated registration
+# ACCOUNT CREATION (ENABLED FOR MAXIMUM REACH)
 [account_creation]
-enabled = true
+enabled = true              # AUTO-CREATION ENABLED
 use_resume_data = true
 use_cover_letter_data = true
-auto_verify_email = false  # Set to true if you want to handle email verification
+auto_verify_email = true
 create_professional_profiles = true
-upload_documents_automatically = true
+
+# SECRETS LOADED FROM ENVIRONMENT
+[secrets]
+# Environment variables automatically loaded:
+# AGENT_NAME, AGENT_EMAIL, AGENT_PHONE
+# LINKEDIN_EMAIL, LINKEDIN_PASSWORD
+# INDEED_EMAIL, INDEED_PASSWORD
+# GLASSDOOR_EMAIL, GLASSDOOR_PASSWORD
+# MONSTER_EMAIL, MONSTER_PASSWORD
+# ZIPRECRUITER_EMAIL, ZIPRECRUITER_PASSWORD
