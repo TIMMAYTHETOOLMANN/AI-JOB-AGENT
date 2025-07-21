@@ -8,6 +8,9 @@ use crate::headless_browser::HeadlessBrowser;
 use crate::nike_career::apply_nike_job;
 use crate::company_career::apply_company_job;
 
+#[cfg(all(not(feature = "headless-chrome"), not(feature = "mock-browser")))]
+use crate::mock_browser::HeadlessBrowser;
+
 /// Processes a batch of job URLs and applies to matching jobs
 pub async fn process_and_apply_to_jobs(
     urls: &[String],
