@@ -23,6 +23,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 rand = "0.8"
 regex = "1.10"
+uuid = { version = "1.0", features = ["v4"] }
 
 # GUI dependencies
 eframe = { version = "0.27", optional = true }
@@ -36,7 +37,6 @@ tower = { version = "0.4", optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
 hyper = { version = "1.0", optional = true }
 tokio-tungstenite = { version = "0.21", optional = true }
-uuid = { version = "1.0", features = ["v4"], optional = true }
 
 # Database and persistence
 sled = { version = "0.34", optional = true }
@@ -59,12 +59,20 @@ keyring = { version = "2.0", optional = true }
 [features]
 default = ["production-gui", "web-server", "visible-chrome"]
 production-gui = ["eframe", "egui_extras", "rfd", "image"]
-web-server = ["axum", "tower", "tower-http", "tokio-tungstenite", "uuid", "hyper"]
+web-server = ["axum", "tower", "tower-http", "tokio-tungstenite", "hyper"]
 visible-chrome = []
 headless-chrome = ["headless_chrome"]
 database = ["sled", "bincode"]
 metrics-export = ["metrics", "metrics-exporter-prometheus"]
 secrets = ["keyring"]
+
+[[bin]]
+name = "integration_test"
+path = "src/bin/integration_test.rs"
+
+[[bin]]
+name = "test_autonomous"
+path = "src/bin/test_autonomous.rs"
 
 [[bin]]
 name = "autonomous_job_agent"

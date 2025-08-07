@@ -1,38 +1,10 @@
 version: '3.8'
-
 services:
-  job-agent:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ai-job-agent
-    environment:
-      - RUST_LOG=info
-      - RUST_BACKTRACE=1
-    ports:
-      - "8080:8080"
+  ai_job_agent:
+    build: .
+    restart: always
+    env_file:
+      - .env
     volumes:
-      - ./state:/app/state
-      - ./logs:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  web-ui:
-    image: nginx:alpine
-    container_name: ai-job-agent-ui
-    ports:
-      - "3000:80"
-    volumes:
-      - ./web:/usr/share/nginx/html:ro
-    depends_on:
-      - job-agent
-    restart: unless-stopped
-
-volumes:
-  state:
-  logs:
+      - ./logs:/usr/src/app/logs
+      - ./queue:/usr/src/app/queue

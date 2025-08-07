@@ -8,34 +8,32 @@ use std::env;
 /// All mock/test data sources removed
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
-    // REQUIRED REAL USER DATA
+    // User information
     pub name: String,
     pub email: String,
     pub resume_path: String,
     pub cover_letter_path: String,
 
-    // REQUIRED JOB SEARCH CRITERIA
-    pub job_keywords: Vec<String>,
-    pub industries: Vec<String>,
-    pub location: Vec<String>,
-    pub preferred_locales: Vec<String>,
+    // Job search criteria
+    pub keywords: Vec<String>,
+    pub locations: Vec<String>,
+    pub min_salary: Option<u32>,
+    pub remote_only: bool,
+    pub job_boards: Vec<String>,
+    pub polling_interval: u32,
 
-    // REQUIRED JOB BOARDS (REAL URLS ONLY)
-    pub targets: Vec<String>,
-
-    // AUTOMATION LIMITS
+    // Legacy fields for compatibility
+    pub job_keywords: Option<Vec<String>>,
+    pub industries: Option<Vec<String>>,
+    pub location: Option<Vec<String>>,
+    pub preferred_locales: Option<Vec<String>>,
+    pub targets: Option<Vec<String>>,
     pub max_concurrent_applications: Option<u32>,
     pub application_rate_limit: Option<u32>,
-    pub enable_international_search: bool,
-
-    // BROWSER CONFIG
-    pub browser_config: BrowserConfig,
-
-    // ACCOUNT CREATION
+    pub enable_international_search: Option<bool>,
+    pub browser_config: Option<BrowserConfig>,
     pub account_creation: Option<AccountCreationConfig>,
-    
-    // SECRETS HANDLING
-    pub secrets: std::collections::HashMap<String, String>,
+    pub secrets: Option<std::collections::HashMap<String, String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,43 +104,73 @@ impl Config {
     fn from_environment() -> Result<Self> {
         Ok(Config {
             name: env::var("AGENT_NAME")
-                .or_else(|_| env::var("USER_NAME"))
-                .unwrap_or_else(|_| "Production Agent".to_string()),
+                .or_else(|_| env::var("DEFAULT_NAME"))
+                .unwrap_or_else(|_| "AI Job Agent".to_string()),
             email: env::var("AGENT_EMAIL")
-                .context("AGENT_EMAIL environment variable required")?,
+                .or_else(|_| env::var("DEFAULT_EMAIL"))
+                .context("DEFAULT_EMAIL environment variable required")?,
             resume_path: env::var("RESUME_PATH")
-                .context("RESUME_PATH environment variable required")?,
-            cover_letter_path: env::var("COVER_LETTER_PATH")
-                .context("COVER_LETTER_PATH environment variable required")?,
-            job_keywords: env::var("JOB_KEYWORDS")
+                .unwrap_or_else(|_| "./assets/resume.pdf".to_string()),
+            cover_letter_path: env::var("COVER_LETTER_TEMPLATE")
+                .unwrap_or_else(|_| "./templates/cover_letter_template.md".to_string()),
+            
+            // New required fields
+            keywords: env::var("JOB_KEYWORDS")
+                .unwrap_or_else(|_| "AI,Machine Learning,Remote,Software".to_string())
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect(),
+            locations: env::var("LOCATION")
+                .unwrap_or_else(|_| "Global,Remote".to_string())
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect(),
+            min_salary: env::var("MIN_SALARY")
+                .ok()
+                .and_then(|s| s.parse().ok()),
+            remote_only: env::var("REMOTE_ONLY")
+                .map(|s| s.to_lowercase() == "true")
+                .unwrap_or(true),
+            job_boards: env::var("JOB_BOARDS")
+                .unwrap_or_else(|_| "linkedin,indeed,monster,weworkremotely".to_string())
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect(),
+            polling_interval: env::var("POLLING_INTERVAL")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(1800),
+
+            // Legacy fields for compatibility
+            job_keywords: Some(env::var("JOB_KEYWORDS")
                 .unwrap_or_else(|_| "software engineer,developer,programmer".to_string())
                 .split(',')
                 .map(|s| s.trim().to_string())
-                .collect(),
-            industries: env::var("INDUSTRIES")
+                .collect()),
+            industries: Some(env::var("INDUSTRIES")
                 .unwrap_or_else(|_| "Technology,Software".to_string())
                 .split(',')
                 .map(|s| s.trim().to_string())
-                .collect(),
-            location: env::var("LOCATION")
+                .collect()),
+            location: Some(env::var("LOCATION")
                 .unwrap_or_else(|_| "Remote,United States".to_string())
                 .split(',')
                 .map(|s| s.trim().to_string())
-                .collect(),
-            preferred_locales: vec!["en-US".to_string()],
-            targets: Self::get_real_job_boards(),
+                .collect()),
+            preferred_locales: Some(vec!["en-US".to_string()]),
+            targets: Some(Self::get_real_job_boards()),
             max_concurrent_applications: env::var("MAX_APPLICATIONS")
                 .ok()
                 .and_then(|s| s.parse().ok()),
             application_rate_limit: env::var("RATE_LIMIT")
                 .ok()
                 .and_then(|s| s.parse().ok()),
-            enable_international_search: env::var("INTERNATIONAL_SEARCH")
+            enable_international_search: Some(env::var("INTERNATIONAL_SEARCH")
                 .map(|s| s.to_lowercase() == "true")
-                .unwrap_or(false),
-            browser_config: BrowserConfig::default(),
+                .unwrap_or(false)),
+            browser_config: Some(BrowserConfig::default()),
             account_creation: None,
-            secrets: std::collections::HashMap::new(),
+            secrets: Some(std::collections::HashMap::new()),
         })
     }
     
