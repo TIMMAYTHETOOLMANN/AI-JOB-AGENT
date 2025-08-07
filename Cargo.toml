@@ -67,6 +67,10 @@ metrics-export = ["metrics", "metrics-exporter-prometheus"]
 secrets = ["keyring"]
 
 [[bin]]
+name = "integration_test"
+path = "src/bin/integration_test.rs"
+
+[[bin]]
 name = "test_autonomous"
 path = "src/bin/test_autonomous.rs"
 
