@@ -1,99 +1,12 @@
-# ========================================================
-# JARVIS 2.0 - PRODUCTION CONFIGURATION
-# CLEAN JOB APPLICATION AGENT - REAL DATA ONLY
-# ========================================================
+keywords = ["AI", "Machine Learning", "Remote", "Software"]
+locations = ["Global", "Remote"]
+min_salary = 75000
+remote_only = true
+job_boards = ["linkedin", "indeed", "monster", "weworkremotely"]
+polling_interval = 1800
 
-# CORE AGENT IDENTITY (PRODUCTION DATA)
-name = "John Doe"
-email = "john.doe@email.com"
-resume_path = "documents/resume.pdf"
-cover_letter_path = "documents/cover_letter.pdf"
-
-# JOB SEARCH CRITERIA (AGGRESSIVE TARGETING)
-job_keywords = [
-    "software engineer",
-    "full stack developer",
-    "backend engineer",
-    "frontend developer",
-    "automation engineer",
-    "devops engineer",
-    "web developer",
-    "python developer",
-    "rust developer",
-    "javascript developer"
-]
-
-# TARGET INDUSTRIES (HIGH-VALUE SECTORS)
-industries = [
-    "Technology",
-    "Software",
-    "Fintech",
-    "E-commerce",
-    "SaaS",
-    "Cloud Computing",
-    "Automation",
-    "Web Development"
-]
-
-# LOCATION PREFERENCES (MAXIMUM REACH)
-location = [
-    "Remote",
-    "Portland, OR",
-    "Seattle, WA",
-    "San Francisco, CA",
-    "New York, NY",
-    "Austin, TX",
-    "Denver, CO",
-    "United States"
-]
-
-# LANGUAGE/LOCALE
-preferred_locales = ["en-US"]
-
-# REAL JOB BOARD TARGETS (PRODUCTION URLS ONLY)
-targets = [
-    "https://www.linkedin.com/jobs",
-    "https://www.indeed.com",
-    "https://www.glassdoor.com",
-    "https://www.monster.com",
-    "https://www.ziprecruiter.com",
-    "https://jobs.nike.com",
-    "https://intel.com/careers",
-    "https://careers.adidas-group.com",
-    "https://careers.google.com",
-    "https://jobs.apple.com",
-    "https://amazon.jobs",
-    "https://careers.microsoft.com",
-    "https://jobs.netflix.com"
-]
-
-# AUTOMATION LIMITS (AGGRESSIVE PRODUCTION)
-max_concurrent_applications = 75
-application_rate_limit = 20
-enable_international_search = true
-
-# BROWSER CONFIGURATION (VISIBLE PRODUCTION MODE)
-[browser_config]
-visible = true              # ALWAYS TRUE - Single visible window
-single_window = true        # ALWAYS TRUE - No multiple tabs
-pause_on_manual = true      # Allow manual intervention
-rate_limit_ms = 2500       # 2.5 second wait between actions
-timeout_seconds = 45
-
-# ACCOUNT CREATION (ENABLED FOR MAXIMUM REACH)
-[account_creation]
-enabled = true              # AUTO-CREATION ENABLED
-use_resume_data = true
-use_cover_letter_data = true
-auto_verify_email = true
-create_professional_profiles = true
-
-# SECRETS LOADED FROM ENVIRONMENT
-[secrets]
-# Environment variables automatically loaded:
-# AGENT_NAME, AGENT_EMAIL, AGENT_PHONE
-# LINKEDIN_EMAIL, LINKEDIN_PASSWORD
-# INDEED_EMAIL, INDEED_PASSWORD
-# GLASSDOOR_EMAIL, GLASSDOOR_PASSWORD
-# MONSTER_EMAIL, MONSTER_PASSWORD
-# ZIPRECRUITER_EMAIL, ZIPRECRUITER_PASSWORD
+# User information
+name = "Your Name"
+email = "your_email@example.com"
+resume_path = "./assets/resume.pdf"
+cover_letter_path = "./templates/cover_letter_template.md"
